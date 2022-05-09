@@ -41,7 +41,9 @@ public class Network
 	//note: this technique performs horribly when their are a lot of layers
 	public void Train(int batchSize, CorrectInputOutputPair[] trainingData, float learningRate)
 	{
-		CorrectInputOutputPair[] randomized = trainingData.OrderBy(x => UnityEngine.Random.value).ToArray();
+		//for thread safety since this runs on a seperate thread
+		System.Random rand = new System.Random();
+		CorrectInputOutputPair[] randomized = trainingData.OrderBy(x => rand.NextDouble()).ToArray();
 		
 		//this shuffle requires too many recurses and causes a stackoverflow lol
 		//Shuffle(trainingData);
@@ -51,7 +53,7 @@ public class Network
 		for (int i = 0; i < batches; i++)
 		{
 			//Stochastic gradient descent batch
-			Batch(trainingData, i, batchSize, learningRate);
+			Batch(trainingData, i, batchSize, learningRate); //if I do this it should get really good at this one batch example
 		}
 	}
 
@@ -73,16 +75,24 @@ public class Network
 		}
 	}
 
+	//tuples are cool
+	//(int, float, Vector2) Cool()
+	//{
+	//	return (1, 2f, Vector2.zero);
+	//}
+
 	void Batch(CorrectInputOutputPair[] randomizedTrainingData, int batchIndex, int batchSize, float learningRate)
 	{
-		
+
 		//https://youtu.be/tIeHLnjs5U8
-		//the cost gradient
+		//weight gradient: the magnitude and direction of change to neuron weights that lead to a higher cost value
+		//error: the magnitude and direction of change to bias weights 
 		//organised like this instead of a 1D array for ease of access, in theory it is still a n dimensional gradient value
 		float[][,] weightGradients = new float[layers.Length][,];
-		//float[][] biasGradients = new float[layers.Length][];
-		float[][] errors = new float[layers.Length][]; //errors are the same as biasGradients
-		float[][] localErrors = new float[layers.Length][]; //localized inside one input output pair
+		float[][] errors = new float[layers.Length][]; //errors are the same as the bias' gradients
+
+		//local errors are needed for calculating weight gradients.
+		float[][] localErrors = new float[layers.Length][]; 
 
 		for (int i = 0; i < layers.Length; i++)
 		{
@@ -144,7 +154,7 @@ public class Network
 					errors[l][j] += error;
 
 					//again, get the rate of change of cost with respect to the weight between the jth nueron in this layer and the kth neuron in the last layer
-					for (int k = 0; k < LastLayer.InputCount; k++)
+					for (int k = 0; k < layers[l].InputCount; k++)
 					{
 						float[] prevActivations = l - 1 < 0 ? data.input : layers[l - 1].Activations;
 						float weightGrad = error * prevActivations[k];
@@ -239,7 +249,7 @@ public class Layer
 			for (int w = 0; w < inputCount; w++)
 			{
 				//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-				//			RANDOM.VALUE IS PROBABLY WRONG, VALUE SHOULD NOT JUST BE BETWEEN 0 AND 1!!!!
+				//			RANDOM.VALUE IS PROBABLY A BAD METHOD 
 				//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 				weights[n, w] = UnityEngine.Random.Range(-1.0f, 1.0f);
 			}
@@ -257,7 +267,7 @@ public class Layer
 			float output = biases[n];
 			for (int w = 0; w < InputCount; w++)
 			{
-				output += inputs[n] * weights[n,w];
+				output += inputs[w] * weights[n,w];
 			}
 			lastWeightedInputs[n] = output;
 			lastActivations[n] = Network.ActivationFunction(output);
