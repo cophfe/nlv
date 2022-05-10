@@ -61,6 +61,7 @@ Network& Network::operator=(const Network& other)
 	{
 		layers[i] = other.layers[i];
 	}
+	return *this;
 }
 
 Network& Network::operator=(Network&& other)
@@ -73,12 +74,13 @@ Network& Network::operator=(Network&& other)
 
 	other.layerCount = 0;
 	other.layers = nullptr;
+	return *this;
 }
 
-float const* Network::Evaluate(float* input, unsigned int inputCount) const
+float const* Network::Evaluate(float* input, unsigned int inputCount)
 {
 	if (input == nullptr)
-		throw std::runtime_error("Cannot pass a null value");
+		throw std::runtime_error("Cannot pass a null value as input");
 	if (inputCount != layers[0].inputCount)
 		throw std::runtime_error("Incorrect number of inputs");
 
@@ -100,6 +102,11 @@ float const* Network::Evaluate(float* input, unsigned int inputCount) const
 	}
 
 	//return the networks outputs
+	return layers[layerCount - 1].activations;
+}
+
+float const* Network::GetPreviousActivations() const
+{
 	return layers[layerCount - 1].activations;
 }
 
@@ -126,5 +133,5 @@ void Network::RandomizeValues()
 float Network::Activate(float weightedInput) const
 {
 	//sigmoid
-	return 1.0f / (1 + glm::exp(weightedInput));
+	return 1.0f / (1 + exp(weightedInput));
 }

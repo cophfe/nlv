@@ -13,27 +13,17 @@ private:
 	NetworkLayer& operator=(const NetworkLayer& other);
 
 	void Init(unsigned int inputCount, unsigned int outputCount);
-	/// <summary>
-	/// holds the weights connecting a neuron in the previous layer and a neuron in the current layer. indexed by [currentNeuron, previousNeuron]
-	/// </summary>
+	
+	// holds the weights connecting a neuron in the previous layer and a neuron in the current layer. 
+	// indexed by [currentNeuron, previousNeuron]
 	float* weights;
-	/// <summary>
-	/// holds neuron bias values
-	/// </summary>
+	// holds neuron bias values
 	float* biases;
-
-	/// <summary>
-	/// The number of neurons in the previous layer
-	/// </summary>
+	// The number of neurons in the previous layer
 	unsigned int inputCount;
-	/// <summary>
-	/// The number of neurons in the currentLayer
-	/// </summary>
+	// The number of neurons in the currentLayer
 	unsigned int outputCount;
-
-	/// <summary>
-	/// The last activation values. stored for usage inside of the network
-	/// </summary>
+	// The last activation values. stored for usage inside of the network
 	float* activations = nullptr;
 
 	float GetWeight(unsigned int currentNeuronIndex, unsigned int lastNeuronIndex) const;

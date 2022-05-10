@@ -6,4 +6,6 @@ void main()
 	network.RandomizeValues();
 
 	const float* output = network.Evaluate(nullptr, 0);
+
+	
 }

@@ -1,0 +1,7 @@
+﻿  Source.cpp
+C:\Users\s210575\Documents\ConnorFettes\Complex Systems\ComplexGameSystems\NeuralNetworkCpp\NeuralNetworkCpp\Source.cpp(4,1): warning C4326: return type of 'main' should be 'int' instead of 'void'
+Source.obj : error LNK2019: unresolved external symbol "public: __cdecl Network::Network(unsigned int,class std::initializer_list<unsigned int>,unsigned int)" (??0Network@@QEAA@IV?$initializer_list@I@std@@I@Z) referenced in function main
+Source.obj : error LNK2019: unresolved external symbol "public: __cdecl Network::~Network(void)" (??1Network@@QEAA@XZ) referenced in function main
+Source.obj : error LNK2019: unresolved external symbol "public: float const * __cdecl Network::Evaluate(float *,unsigned int)const " (?Evaluate@Network@@QEBAPEBMPEAMI@Z) referenced in function main
+Source.obj : error LNK2019: unresolved external symbol "public: void __cdecl Network::RandomizeValues(void)" (?RandomizeValues@Network@@QEAAXXZ) referenced in function main
+C:\Users\s210575\Documents\ConnorFettes\Complex Systems\ComplexGameSystems\NeuralNetworkCpp\x64\Debug\SimpleImplementation.exe : fatal error LNK1120: 4 unresolved externals

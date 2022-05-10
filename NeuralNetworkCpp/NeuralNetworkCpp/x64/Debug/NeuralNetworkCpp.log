@@ -1,0 +1,7 @@
+﻿  Network.cpp
+C:\Users\s210575\Documents\ConnorFettes\Complex Systems\ComplexGameSystems\NeuralNetworkCpp\NeuralNetworkCpp\Network.cpp(8,44): warning C4267: '=': conversion from 'size_t' to 'unsigned int', possible loss of data
+C:\Users\s210575\Documents\ConnorFettes\Complex Systems\ComplexGameSystems\NeuralNetworkCpp\NeuralNetworkCpp\Network.cpp(94,22): warning C4018: '<': signed/unsigned mismatch
+C:\Users\s210575\Documents\ConnorFettes\Complex Systems\ComplexGameSystems\NeuralNetworkCpp\NeuralNetworkCpp\Network.cpp(95,57): warning C4267: 'argument': conversion from 'size_t' to 'unsigned int', possible loss of data
+  NetworkEvolver.cpp
+  Generating Code...
+  NeuralNetworkCpp.vcxproj -> C:\Users\s210575\Documents\ConnorFettes\Complex Systems\ComplexGameSystems\NeuralNetworkCpp\x64\Debug\NeuralNetworkCpp.lib

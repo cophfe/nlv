@@ -13,21 +13,22 @@ NetworkLayer::~NetworkLayer()
 		activations = nullptr;
 	}
 }
-
 NetworkLayer::NetworkLayer(const NetworkLayer& other)
 {
 	outputCount = other.outputCount;
 	inputCount = other.inputCount;
+	
+	if (other.activations != nullptr)
+	{
+		weights = new float[inputCount * outputCount];
+		biases = new float[outputCount];
+		activations = new float[outputCount];
 
-	weights = new float[inputCount * outputCount];
-	biases = new float[outputCount];
-	activations = new float[outputCount];
-
-	memcpy(weights, other.weights, inputCount * outputCount);
-	memcpy(biases, other.weights, outputCount);
-	memcpy(activations, other.weights, outputCount);
+		memcpy(weights, other.weights, inputCount * outputCount);
+		memcpy(biases, other.biases, outputCount);
+		memcpy(activations, other.activations, outputCount);
+	}
 }
-
 NetworkLayer& NetworkLayer::operator=(const NetworkLayer& other)
 {
 	if (activations != nullptr)
@@ -44,17 +45,22 @@ NetworkLayer& NetworkLayer::operator=(const NetworkLayer& other)
 	outputCount = other.outputCount;
 	inputCount = other.inputCount;
 
-	weights = new float[inputCount * outputCount];
-	biases = new float[outputCount];
-	activations = new float[outputCount];
+	if (other.activations != nullptr)
+	{
+		weights = new float[inputCount * outputCount];
+		biases = new float[outputCount];
+		activations = new float[outputCount];
 
-	memcpy(weights, other.weights, inputCount * outputCount);
-	memcpy(biases, other.weights, outputCount);
-	memcpy(activations, other.weights, outputCount);
+		memcpy(weights, other.weights, inputCount * outputCount);
+		memcpy(biases, other.biases, outputCount);
+		memcpy(activations, other.activations, outputCount);
+	}
+	return *this;
 }
 
 void NetworkLayer::Init(unsigned int inputCount, unsigned int outputCount)
 {
+	//create arrays
 	weights = new float[inputCount * outputCount];
 	biases = new float[outputCount];
 	activations = new float[outputCount];
@@ -62,10 +68,12 @@ void NetworkLayer::Init(unsigned int inputCount, unsigned int outputCount)
 
 float NetworkLayer::GetWeight(unsigned int currentNeuronIndex, unsigned int lastNeuronIndex) const
 {
+	//return weight at index [currentNeuronIndex, lastNeuronIndex]
 	return weights[lastNeuronIndex * outputCount + currentNeuronIndex];
 }
 
 void NetworkLayer::SetWeight(unsigned int currentNeuronIndex, unsigned int lastNeuronIndex, float value)
 {
+	//set weight at index [currentNeuronIndex, lastNeuronIndex] to value
 	weights[lastNeuronIndex * outputCount + currentNeuronIndex] = value;
 }
