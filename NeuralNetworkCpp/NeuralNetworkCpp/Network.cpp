@@ -3,7 +3,7 @@
 Network::Network(unsigned int inputNeurons, std::initializer_list<unsigned int> hiddenLayerNeurons, unsigned int outputNeurons)
 {
 	if (inputNeurons == 0 || outputNeurons == 0)
-		throw std::runtime_error("Neuron count cannot be less than or equal to zero");
+		throw std::runtime_error("Neuron count cannot be less than or equal to 0");
 
 	layerCount = hiddenLayerNeurons.size() + 1;
 	layers = new NetworkLayer[layerCount];
@@ -13,8 +13,8 @@ Network::Network(unsigned int inputNeurons, std::initializer_list<unsigned int> 
 	for (auto&& layerCount : hiddenLayerNeurons)
 	{
 		if (layerCount == 0)
-			throw std::runtime_error("Neuron count cannot be less than or equal to zero");
-
+			throw std::runtime_error("Neuron count cannot be less than or equal to 0");
+		
 		layers[i].Init(inputCount, layerCount);
 		i++;
 	}
@@ -112,9 +112,8 @@ float const* Network::GetPreviousActivations() const
 
 void Network::RandomizeValues()
 {
-	//probably need to seed
 	std::random_device rand;
-	std::default_random_engine rEngine;
+	std::default_random_engine rEngine(rand);
 	std::normal_distribution<float> dist(0, 1);
 
 	for (size_t l = 0; l < layerCount; l++)
@@ -126,6 +125,41 @@ void Network::RandomizeValues()
 		for (size_t b = 0; b < layers[l].outputCount; b++)
 		{
 			layers[l].biases[b] = dist(rEngine);
+		}
+	}
+}
+
+void Network::RandomizeValues(unsigned int seed)
+{
+	std::default_random_engine rEngine(seed);
+	std::normal_distribution<float> dist(0, 1);
+
+	for (size_t l = 0; l < layerCount; l++)
+	{
+		for (size_t w = 0; w < layers[l].inputCount * layers[l].outputCount; w++)
+		{
+			layers[l].weights[w] = dist(rEngine);
+		}
+		for (size_t b = 0; b < layers[l].outputCount; b++)
+		{
+			layers[l].biases[b] = dist(rEngine);
+		}
+	}
+}
+
+void Network::RandomizeValues(const std::default_random_engine& randEngine)
+{
+	std::normal_distribution<float> dist(0, 1);
+
+	for (size_t l = 0; l < layerCount; l++)
+	{
+		for (size_t w = 0; w < layers[l].inputCount * layers[l].outputCount; w++)
+		{
+			layers[l].weights[w] = dist(randEngine);
+		}
+		for (size_t b = 0; b < layers[l].outputCount; b++)
+		{
+			layers[l].biases[b] = dist(randEngine);
 		}
 	}
 }

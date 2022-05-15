@@ -24,8 +24,17 @@ public:
 	/// <returns>The last values returned by the evaluate function</returns>
 	float const* GetPreviousActivations() const;
 
+	/// <returns>The number of input neurons into the network</returns>
+	inline unsigned int GetInputCount() const { return layers[0].inputCount; }
+	/// <returns>The number of output neurons from the network</returns>
+	inline unsigned int GetOutputCount() const { return layers[layerCount - 1].outputCount; }
+
 	/// <summary>Randomize the network's values</summary>
 	void RandomizeValues();
+	/// <summary>Randomize the network's values</summary>
+	void RandomizeValues(unsigned int seed);
+	/// <summary>Randomize the network's values</summary>
+	void RandomizeValues(const std::default_random_engine& randEngine);
 private:
 	// componentwise activation function
 	float Activate(float weightedInput) const;

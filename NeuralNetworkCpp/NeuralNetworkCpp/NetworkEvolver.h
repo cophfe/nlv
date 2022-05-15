@@ -1,17 +1,19 @@
 #pragma once
 #include "Network.h"
-#include "NetworkGenome.h"
+#include "NetworkOrganism.h"
 #include <thread>
+#include "Maths.h"
 
 typedef void(*EvolverStepCallback)(const NetworkEvolver& evolver, NetworkOrganism& organism, int organismIndex);
+typedef void(*EvolverGenerationCallback)(const NetworkEvolver& evolver, NetworkOrganism* organisms);
 
-// Note: in this library the 
+// Note: in this class a gene is considered to be a weight or a bias in a neural network
 // When a gene is mutated, this decides how exactly that will take place
 enum class EvolverMutationType : char
 {
 	// The gene is set to a random value between -1 and 1
 	Randomized,
-	// The gene has a random value from a normal distribution (mean 0, standard deviation 1) added to it (clamped between -1 and 1)
+	// The gene has a random value from a normal distribution added to it (mean 0, standard deviation 1, clamped between -1 and 1)
 	Guassan
 };
 
@@ -53,6 +55,8 @@ struct NetworkEvolverDefinition
 	float elitePercent;
 	float mutationRate;
 	EvolverStepCallback stepFunction;
+	EvolverGenerationCallback startFunction;
+	EvolverGenerationCallback endFunction;
 	EvolverMutationType mutationType;
 	EvolverCrossoverType crossoverType;
 	EvolverSelectionType selectionType;
@@ -65,29 +69,37 @@ public:
 	// Create network evolver from a network evolver definition
 	NetworkEvolver(const NetworkEvolverDefinition& def);
 	// Load data
-	static NetworkEvolver LoadFromFile(std::string file);
-	static std::string LoadToString(std::string file);
+	//////////////////////////////////////static NetworkEvolver LoadFromFile(std::string file);
+	//////////////////////////////////////static std::string LoadToString(std::string file);
 	// Save data
-	void SaveToFile(std::string file);
-	std::string SaveToString();
+	//////////////////////////////////////void SaveToFile(std::string file);
+	//////////////////////////////////////std::string SaveToString();
 	// Create the new generation, step through
-	void RunGeneration();
+	void EvaluateGeneration();
+	void EvaluateGenerations(unsigned int count);
 	// Finds the best performing organism in the last generation
 	const NetworkOrganism& FindBestOrganism() const;
+	// Calculates the range of fitnesses in the last generation
+	float FindFitnessRange() const;
 	// Returns the array containing the last generation of organisms
-	const NetworkOrganism const* GetGeneration() const;
+	inline const NetworkOrganism const* GetGeneration() const { return organisms; };
 	// Get the amount of organisms in a generation
-	unsigned int GetGenerationSize() const;
+	inline unsigned int GetGenerationSize() const { return generationSize; };
 
 private:
 	// Create the next generation based on values from the last generation
-	void CreateNextGeneration();
+	void CreateNewGen();
 	// Step through the current generation
-	void StepGeneration();
+	void StepGen();
 
 	// Called for each organism for every step. Allows the user to modify values used for the organism's next step
 	// Inside this callback no values accessed by other organisms should be modified.
 	EvolverStepCallback stepCallback;
+	//Called once at the start of a generation. Allows the user to setup initial input values for the organism, as well as any variables used on the users side.
+	//Neither this or endCallback need to be set.
+	EvolverGenerationCallback startCallback;
+	//Called once at the end of a generation. For whatever the user needs.
+	EvolverGenerationCallback endCallback;
 	// the organisms in the current generation. Not accessible outside of the evolver.
 	NetworkOrganism* organisms;
 	// The number of organisms in a given generation
@@ -100,6 +112,8 @@ private:
 	float elitePercent;
 	// The maximum number of steps an organism can take
 	unsigned int maxSteps;
+	// 
+	unsigned int currentGeneration;
 	// Whether stepping is threaded or not. Disabling this will severely impact performance
 	// Note: mutation is still threaded
 	bool threadedStepping;

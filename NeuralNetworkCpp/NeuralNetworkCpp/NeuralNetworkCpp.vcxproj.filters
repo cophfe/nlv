@@ -27,7 +27,7 @@
     <ClInclude Include="NetworkEvolver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="NetworkGenome.h">
+    <ClInclude Include="NetworkOrganism.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -39,6 +39,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="NetworkEvolver.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NetworkOrganism.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
