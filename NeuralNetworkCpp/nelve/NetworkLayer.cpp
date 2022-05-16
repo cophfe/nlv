@@ -1,5 +1,15 @@
 #include "NetworkLayer.h"
 
+NetworkLayer::NetworkLayer(unsigned int inputCount, unsigned int outputCount)
+{
+	this->inputCount = inputCount;
+	this->outputCount = outputCount;
+
+	weights = new float[inputCount * outputCount];
+	biases = new float[outputCount];
+	activations = new float[outputCount];
+}
+
 NetworkLayer::~NetworkLayer()
 {
 	if (activations != nullptr)
@@ -58,12 +68,44 @@ NetworkLayer& NetworkLayer::operator=(const NetworkLayer& other)
 	return *this;
 }
 
-void NetworkLayer::Init(unsigned int inputCount, unsigned int outputCount)
+NetworkLayer::NetworkLayer(NetworkLayer&& other)
 {
-	//create arrays
-	weights = new float[inputCount * outputCount];
-	biases = new float[outputCount];
-	activations = new float[outputCount];
+	outputCount = other.outputCount;
+	inputCount = other.inputCount;
+	
+	weights = other.weights;
+	biases = other.biases;
+	activations = other.activations;
+
+	other.activations = nullptr;
+	other.biases = nullptr;
+	other.weights = nullptr;
+}
+
+NetworkLayer& NetworkLayer::operator=(NetworkLayer&& other)
+{
+	if (activations != nullptr)
+	{
+		delete[] weights;
+		delete[] biases;
+		delete[] activations;
+
+		weights = nullptr;
+		biases = nullptr;
+		activations = nullptr;
+	}
+
+	outputCount = other.outputCount;
+	inputCount = other.inputCount;
+
+	weights = other.weights;
+	biases = other.biases;
+	activations = other.activations;
+
+	other.activations = nullptr;
+	other.biases = nullptr;
+	other.weights = nullptr;
+	return *this;
 }
 
 float NetworkLayer::GetWeight(unsigned int currentNeuronIndex, unsigned int lastNeuronIndex) const

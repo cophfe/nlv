@@ -5,9 +5,12 @@
 #include <stdexcept>
 #include <random>
 
+class NetworkEvolver;
+
 //a feed forward network implimentation
 class Network
 {
+	friend NetworkEvolver;
 public:
 	Network(unsigned int inputs, std::initializer_list<unsigned int> hiddenLayerNeurons, unsigned int outputs);
 	~Network();
@@ -34,7 +37,7 @@ public:
 	/// <summary>Randomize the network's values</summary>
 	void RandomizeValues(unsigned int seed);
 	/// <summary>Randomize the network's values</summary>
-	void RandomizeValues(const std::default_random_engine& randEngine);
+	void RandomizeValues(std::default_random_engine& randEngine);
 private:
 	// componentwise activation function
 	float Activate(float weightedInput) const;

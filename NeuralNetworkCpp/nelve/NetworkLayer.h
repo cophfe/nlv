@@ -1,19 +1,21 @@
 #pragma once
 #include <cstring>
 class Network;
+class NetworkEvolver;
 
 struct NetworkLayer
 {
-private:
 	friend Network;
+	friend NetworkEvolver;
 
-	NetworkLayer() = default;
+private:
+	NetworkLayer(unsigned int inputCount, unsigned int outputCount);
 	~NetworkLayer();
 	NetworkLayer(const NetworkLayer& other);
 	NetworkLayer& operator=(const NetworkLayer& other);
+	NetworkLayer(NetworkLayer&& other);
+	NetworkLayer& operator=(NetworkLayer&& other);
 
-	void Init(unsigned int inputCount, unsigned int outputCount);
-	
 	// holds the weights connecting a neuron in the previous layer and a neuron in the current layer. 
 	// indexed by [currentNeuron, previousNeuron]
 	float* weights;

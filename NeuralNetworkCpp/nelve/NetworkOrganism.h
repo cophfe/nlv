@@ -6,7 +6,7 @@ class NetworkOrganism
 {
 	friend NetworkEvolver;
 private:
-	inline NetworkOrganism(Network& networkToCopy) : network(Network(networkToCopy)), fitness(0), continueStepping(true), steps(0) { networkInputs = new float[network.GetInputCount() ]; };
+	NetworkOrganism(Network& networkToCopy);
 	~NetworkOrganism();
 	NetworkOrganism(const NetworkOrganism& other);
 	NetworkOrganism& operator=(const NetworkOrganism& other);

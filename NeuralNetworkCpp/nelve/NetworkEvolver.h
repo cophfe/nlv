@@ -3,6 +3,7 @@
 #include "NetworkOrganism.h"
 #include <thread>
 #include "Maths.h"
+#include <iostream>
 
 typedef void(*EvolverStepCallback)(const NetworkEvolver& evolver, NetworkOrganism& organism, int organismIndex);
 typedef void(*EvolverGenerationCallback)(const NetworkEvolver& evolver, NetworkOrganism* organisms);
@@ -49,25 +50,43 @@ enum class EvolverCrossoverType : char
 
 struct NetworkEvolverDefinition
 {
+public:
+	NetworkEvolverDefinition() = default;
+	NetworkEvolverDefinition(Network& networkTemplate, unsigned int generationSize, unsigned int maxSteps,
+		float elitePercent, float mutationRate, EvolverStepCallback stepFunction, EvolverMutationType mutationType, EvolverCrossoverType crossoverType,
+		EvolverSelectionType selectionType, bool threadedStepping, EvolverGenerationCallback startFunction,
+		EvolverGenerationCallback endFunction)
+		: networkTemplate(networkTemplate), generationSize(generationSize), maxSteps(maxSteps), elitePercent(elitePercent),
+		mutationRate(mutationRate), stepFunction(stepFunction), startFunction(startFunction), endFunction(endFunction),
+		mutationType(mutationType), crossoverType(crossoverType), selectionType(selectionType), threadedStepping(threadedStepping)
+	{}
+
 	Network& networkTemplate;
+	EvolverStepCallback stepFunction;
+	EvolverGenerationCallback startFunction;
+	EvolverGenerationCallback endFunction;
 	unsigned int generationSize;
 	unsigned int maxSteps;
 	float elitePercent;
 	float mutationRate;
-	EvolverStepCallback stepFunction;
-	EvolverGenerationCallback startFunction;
-	EvolverGenerationCallback endFunction;
 	EvolverMutationType mutationType;
 	EvolverCrossoverType crossoverType;
 	EvolverSelectionType selectionType;
 	bool threadedStepping;
 };
 
+
+//This evolver will create a markov chain
+//if a descision can not be made exclusively using the previous state, it will probably not work great
+//if the user inputs the previous states into the network, this isn't necessarily true.
 class NetworkEvolver
 {
 public:
 	// Create network evolver from a network evolver definition
 	NetworkEvolver(const NetworkEvolverDefinition& def);
+	~NetworkEvolver();
+	NetworkEvolver(const NetworkEvolver& other) = delete;
+	NetworkEvolver& operator=(const NetworkEvolver& other) = delete;
 	// Load data
 	//////////////////////////////////////static NetworkEvolver LoadFromFile(std::string file);
 	//////////////////////////////////////static std::string LoadToString(std::string file);
@@ -112,7 +131,7 @@ private:
 	float elitePercent;
 	// The maximum number of steps an organism can take
 	unsigned int maxSteps;
-	// 
+	// The current generation index
 	unsigned int currentGeneration;
 	// Whether stepping is threaded or not. Disabling this will severely impact performance
 	// Note: mutation is still threaded
