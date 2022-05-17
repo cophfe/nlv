@@ -1,11 +1,11 @@
 #include "NetworkEvolver.h"
 
 NetworkEvolver::NetworkEvolver(const NetworkEvolverDefinition& def)
-	: generationSize(def.generationSize), maxSteps(def.maxSteps), elitePercent(def.elitePercent), 
+	: population(def.generationSize), maxSteps(def.maxSteps), elitePercent(def.elitePercent), 
 	mutationRate(def.mutationRate), stepCallback(def.stepFunction), startCallback(def.startFunction), endCallback(def.endFunction), threadedStepping(def.threadedStepping),
 	mutationType(def.mutationType), selectionType(def.selectionType), crossoverType(def.crossoverType), currentGeneration(0)
 {
-	if (generationSize == 0)
+	if (population == 0)
 		throw std::runtime_error("Generation size cannot be 0");
 	if (maxSteps == 0)
 		throw std::runtime_error("Max steps cannot be 0");
@@ -16,15 +16,19 @@ NetworkEvolver::NetworkEvolver(const NetworkEvolverDefinition& def)
 	neuralOutputSize = def.networkTemplate.GetOutputCount();
 
 	//get an uninitialized array of organisms
-	organisms = (NetworkOrganism*)(malloc(sizeof(NetworkOrganism) * generationSize));
-	//initiate said array of organisms
-	std::random_device rand;
-	std::default_random_engine rEngine(rand());
+	organisms = (NetworkOrganism*)(malloc(sizeof(NetworkOrganism) * population));
 
-	for (size_t i = 0; i < generationSize; i++)
+	
+	if (def.seed == 0)
+		random.engine.seed(std::random_device()());
+	else
+		random.engine.seed(def.seed);
+	
+	//initiate said array of organisms
+	for (size_t i = 0; i < population; i++)
 	{
 		new (organisms + i) NetworkOrganism(def.networkTemplate);
-		organisms[i].network.RandomizeValues(rEngine);
+		organisms[i].network.RandomizeValues(random.engine);
 	}
 }
 
@@ -32,7 +36,7 @@ NetworkEvolver::~NetworkEvolver()
 {
 	if (organisms)
 	{
-		for (size_t i = 0; i < generationSize; i++)
+		for (size_t i = 0; i < population; i++)
 			(*(organisms + i)).~NetworkOrganism();
 		free(organisms);
 		organisms = nullptr;
@@ -50,26 +54,24 @@ void NetworkEvolver::CreateNewGen()
 
 	//Order:
 	//Retain elite: elite get copied into next generation
-	//Selection : select two parents
+	//Selection : select a number of parents
 	//Crossover : crossover said parents to create a child
 	//Loop: do selection and crossover until you have enough in the generation
 	//Mutation : go over all new children and modify some genes (don't go over the elites? idk thats up to interpretation)
 
 	//Make an index array ordered by the fitnesses of organisms
-	std::vector<unsigned int> fitnessOrderedIndexes(generationSize);
-	for (size_t i = 0; i < generationSize; i++)
+	std::vector<unsigned int> fitnessOrderedIndexes(population);
+	for (size_t i = 0; i < population; i++)
 		fitnessOrderedIndexes[i] = i;
 	std::sort(fitnessOrderedIndexes.begin(), fitnessOrderedIndexes.end(), [this](int a, int b) { return organisms[a].fitness < organisms[b].fitness; });
-	for (size_t i = 0; i < generationSize; i++)
-		std::cout << i << ": " << organisms[fitnessOrderedIndexes[i]].fitness << std::endl;
 
 	//create new organism array
-	NetworkOrganism* newOrganisms = (NetworkOrganism*)(malloc(sizeof(NetworkOrganism) * generationSize));
+	NetworkOrganism* newOrganisms = (NetworkOrganism*)(malloc(sizeof(NetworkOrganism) * population));
 	if (newOrganisms == nullptr)
 		throw std::runtime_error("Cannot allocate new organism array.");
 
 	//copy elite over (should work as long as destructors aren't called in previous elites)
-	unsigned int eliteCount = std::max((unsigned int)(elitePercent * generationSize), generationSize);
+	unsigned int eliteCount = std::max((unsigned int)(elitePercent * population), population);
 	memcpy(newOrganisms, organisms, eliteCount * sizeof(NetworkOrganism));
 	
 	//the rest of the newGeneration will be populated with children of the previous generation
@@ -81,9 +83,28 @@ void NetworkEvolver::CreateNewGen()
 	{
 	case EvolverSelectionType::FitnessProportional:
 	{
+		float inverseTotalFitness = 0;
+		//if there are negative fitnesses, add an addition to fitness values to make them all more than 0
+		float fitnessAddition = -std::min(organisms[fitnessOrderedIndexes[population - 1]].fitness, 0.0f);
 
+		for (size_t i = 0; i < population; i++)
+			inverseTotalFitness += organisms[i].fitness;
+		inverseTotalFitness = 1.0f / (inverseTotalFitness + fitnessAddition * population);
+
+		while (childIndex < population)
+		{
+			NetworkOrganism& p1 = SelectionFitnessProportional(inverseTotalFitness, fitnessAddition);
+			NetworkOrganism& p2 = SelectionFitnessProportional(inverseTotalFitness, fitnessAddition);
+			Crossover(newOrganisms[childIndex], p1, p2);
+			childIndex++;
+		}
 	}
 		break;
+	case EvolverSelectionType::StochasticUniversal:
+	{
+		//https://en.wikipedia.org/wiki/Stochastic_universal_sampling
+	}
+	break;
 	case EvolverSelectionType::Ranked:
 	{
 
@@ -96,7 +117,7 @@ void NetworkEvolver::CreateNewGen()
 		break;
 	case EvolverSelectionType::Boltzman:
 	{
-
+		//https://pdfhall.com/chapter-05-the-boltzmann-selection-procedure_5bc2aef2097c47e5298b4598.html
 	}
 		break;
 	default:
@@ -107,52 +128,18 @@ void NetworkEvolver::CreateNewGen()
 	//Mutate new children
 	switch (mutationType)
 	{
-	case EvolverMutationType::Randomized:
-		for (size_t i = eliteCount; i < generationSize; i++)
+	case EvolverMutationType::Set:
+		for (size_t i = eliteCount; i < population; i++)
 		{
-			Network& net = newOrganisms[i].network;
-			for (size_t i = 0; i < net.layerCount; i++)
-			{
-				NetworkLayer& layer = net.layers[i];
-				for (size_t i = 0; i < layer.outputCount; i++)
-				{
-					if (randomVal < mutationRate)
-					{
-						layer.biases[i] = otherRandomVal;
-					}
-				}
-				for (size_t i = 0; i < layer.outputCount * layer.inputCount; i++)
-				{
-					if (randomVal < mutationRate)
-					{
-						layer.weights[i] = otherRandomVal;
-					}
-				}
-			}
+			while(random.Chance() < mutationRate)
+				MutateAdd(newOrganisms[i]);
 		}
 		break;
-	case EvolverMutationType::Guassan:
-		for (size_t i = eliteCount; i < generationSize; i++)
+	case EvolverMutationType::Add:
+		for (size_t i = eliteCount; i < population; i++)
 		{
-			Network& net = newOrganisms[i].network;
-			for (size_t i = 0; i < net.layerCount; i++)
-			{
-				NetworkLayer& layer = net.layers[i];
-				for (size_t i = 0; i < layer.outputCount; i++)
-				{
-					if (randomVal < mutationRate)
-					{
-						layer.biases[i] = std::clamp(layer.biases[i] + normallyDistributedVal, -1, 1);
-					}
-				}
-				for (size_t i = 0; i < layer.outputCount * layer.inputCount; i++)
-				{
-					if (randomVal < mutationRate)
-					{
-						layer.biases[i] = std::clamp(layer.biases[i] + normallyDistributedVal, -1, 1);
-					}
-				}
-			}
+			while (random.Chance() < mutationRate)
+				MutateSet(newOrganisms[i]);
 		}
 		break;
 	default:
@@ -162,12 +149,64 @@ void NetworkEvolver::CreateNewGen()
 	
 	//destroy previous generation
 	//don't destruct the elite (thanks free() for allowing this)
-	for (size_t i = eliteCount; i < generationSize; i++)
+	for (size_t i = eliteCount; i < population; i++)
 		(*(organisms + i)).~NetworkOrganism();
 	free(organisms);
 	
 	//set organisms to the new generation
 	organisms = newOrganisms;
+}
+
+NetworkOrganism& NetworkEvolver::SelectionFitnessProportional(float inverseTotalFitness, float fitnessAddition)
+{
+	//stochastic acceptance based 
+	unsigned int parentIndex; 
+	do {
+		parentIndex = random.ChanceIndex(population);
+	} while (random.Chance() <= (organisms[parentIndex].fitness + fitnessAddition) * inverseTotalFitness);
+	return organisms[parentIndex];
+}
+
+void NetworkEvolver::Crossover(NetworkOrganism& child, NetworkOrganism& p1, NetworkOrganism& p2)
+{
+	switch (crossoverType)
+	{
+	case EvolverCrossoverType::Uniform:
+	{
+		for (size_t i = 0; i < child.network.geneCount; i++)
+		{
+			child.network.genes[i] = random.Chance() > 0.5f ? p1.network.genes[i] : p2.network.genes[i];
+		}
+	}
+		break;
+	case EvolverCrossoverType::Point:
+	{
+		unsigned int point = random.ChanceIndex(child.network.geneCount);
+		memcpy(child.network.genes, p1.network.genes, point);
+		memcpy(child.network.genes + point, p2.network.genes, child.network.geneCount - point);
+	}
+		break;
+	case EvolverCrossoverType::Arithmetic:
+		break;
+	case EvolverCrossoverType::ArithmeticProportional:
+		break;
+	case EvolverCrossoverType::Heuristic:
+		break;
+	default:
+		break;
+	}
+}
+
+void NetworkEvolver::MutateAdd(NetworkOrganism& org)
+{
+	unsigned int randomGeneIndex = random.Chance() * org.network.geneCount;
+	org.network.genes[randomGeneIndex] = std::clamp(org.network.genes[randomGeneIndex] + random.Normal(), -1.0f, 1.0f);
+}
+
+void NetworkEvolver::MutateSet(NetworkOrganism& org)
+{
+	unsigned int randomGeneIndex = random.Chance() * org.network.geneCount;
+	org.network.genes[randomGeneIndex] = random.Normal();
 }
 
 void NetworkEvolver::StepGen()
@@ -177,8 +216,8 @@ void NetworkEvolver::StepGen()
 		//make a thread for each organism and step through them at the same time
 		//this could potentially make thousands of threads. its definitely better to have less threads doing a share of organisms each
 		//should also push the creation of this into runGeneration/runGenerations, making it possible to keep threads running over multiple generations
-		std::thread* threads = new std::thread[generationSize];
-		for (size_t i = 0; i < generationSize; i++)
+		std::thread* threads = new std::thread[population];
+		for (size_t i = 0; i < population; i++)
 		{
 			threads[i] = std::thread([i, this]()
 			{
@@ -193,7 +232,7 @@ void NetworkEvolver::StepGen()
 				}
 			});
 		}
-		for (size_t i = 0; i < generationSize; i++)
+		for (size_t i = 0; i < population; i++)
 		{
 			threads[i].join();
 		}
@@ -205,7 +244,7 @@ void NetworkEvolver::StepGen()
 			bool allDone = true;
 
 			//loop through all organisms and step through them
-			for (size_t i = 0; i < generationSize; i++)
+			for (size_t i = 0; i < population; i++)
 			{
 				if (organisms[i].steps >= maxSteps || !organisms[i].continueStepping)
 					continue;
@@ -256,7 +295,7 @@ const NetworkOrganism& NetworkEvolver::FindBestOrganism() const
 	float maxF = organisms[0].fitness;
 	unsigned int index = 0;
 
-	for (size_t i = 1; i < generationSize; i++)
+	for (size_t i = 1; i < population; i++)
 	{
 		if (organisms[i].fitness > maxF)
 		{
@@ -272,7 +311,7 @@ float NetworkEvolver::FindFitnessRange() const
 	float minF = organisms[0].fitness;
 	float maxF = organisms[0].fitness;
 
-	for (size_t i = 1; i < generationSize; i++)
+	for (size_t i = 1; i < population; i++)
 	{
 		minF = std::fminf(organisms[i].fitness, minF);
 		maxF = std::fmaxf(organisms[i].fitness, maxF);

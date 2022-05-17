@@ -1,5 +1,8 @@
-﻿  Source.cpp
-C:\Users\s210575\Documents\ConnorFettes\Complex Systems\ComplexGameSystems\NeuralNetworkCpp\nelve\NetworkEvolver.h(100,31): warning C4114: same type qualifier used more than once
-C:\Users\s210575\Documents\ConnorFettes\Complex Systems\ComplexGameSystems\NeuralNetworkCpp\SimpleImplementation\Source.cpp(14,1): warning C4326: return type of 'main' should be 'int' instead of 'void'
-C:\Users\s210575\Documents\ConnorFettes\Complex Systems\ComplexGameSystems\NeuralNetworkCpp\SimpleImplementation\Source.cpp(22,12): warning C4244: 'argument': conversion from 'time_t' to 'unsigned int', possible loss of data
+﻿  SnakeGame.cpp
+C:\Users\s210575\Documents\ConnorFettes\Complex Systems\ComplexGameSystems\NeuralNetworkCpp\nelve\NetworkEvolver.h(109,31): warning C4114: same type qualifier used more than once
+C:\Users\s210575\Documents\ConnorFettes\Complex Systems\ComplexGameSystems\NeuralNetworkCpp\nelve\NetworkEvolver.h(145,72): warning C4244: 'return': conversion from 'float' to 'unsigned int', possible loss of data
+C:\Users\s210575\Documents\ConnorFettes\Complex Systems\ComplexGameSystems\NeuralNetworkCpp\SimpleImplementation\SnakeGame.cpp(15,42): warning C4244: 'argument': conversion from 'time_t' to 'unsigned int', possible loss of data
+C:\Users\s210575\Documents\ConnorFettes\Complex Systems\ComplexGameSystems\NeuralNetworkCpp\SimpleImplementation\SnakeGame.cpp(18,12): warning C4244: 'argument': conversion from 'time_t' to 'unsigned int', possible loss of data
+C:\Users\s210575\Documents\ConnorFettes\Complex Systems\ComplexGameSystems\NeuralNetworkCpp\SimpleImplementation\SnakeGame.cpp(172,10): warning C4244: 'initializing': conversion from 'int' to 'float', possible loss of data
+C:\Users\s210575\Documents\ConnorFettes\Complex Systems\ComplexGameSystems\NeuralNetworkCpp\SimpleImplementation\SnakeGame.cpp(172,44): warning C4244: 'initializing': conversion from 'int' to 'float', possible loss of data
   SimpleImplementation.vcxproj -> C:\Users\s210575\Documents\ConnorFettes\Complex Systems\ComplexGameSystems\NeuralNetworkCpp\x64\Debug\SimpleImplementation.exe

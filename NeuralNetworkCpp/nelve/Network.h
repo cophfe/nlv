@@ -1,6 +1,5 @@
 #pragma once
 #include <initializer_list>
-#include "NetworkLayer.h"
 #include "Maths.h"
 #include <stdexcept>
 #include <random>
@@ -28,7 +27,7 @@ public:
 	float const* GetPreviousActivations() const;
 
 	/// <returns>The number of input neurons into the network</returns>
-	inline unsigned int GetInputCount() const { return layers[0].inputCount; }
+	inline unsigned int GetInputCount() const { return inputCount; }
 	/// <returns>The number of output neurons from the network</returns>
 	inline unsigned int GetOutputCount() const { return layers[layerCount - 1].outputCount; }
 
@@ -38,13 +37,37 @@ public:
 	void RandomizeValues(unsigned int seed);
 	/// <summary>Randomize the network's values</summary>
 	void RandomizeValues(std::default_random_engine& randEngine);
+
+	float GetWeight(unsigned int layer, unsigned int currentNeuronIndex, unsigned int lastNeuronIndex) const;
+	void SetWeight(unsigned int layer, unsigned int currentNeuronIndex, unsigned int lastNeuronIndex, float value);
+	float GetBias(unsigned int layer, unsigned int neuronIndex) const;
+	void SetBias(unsigned int layer, unsigned int neuronIndex, float value);
+
 private:
 	// componentwise activation function
 	float Activate(float weightedInput) const;
 
-	// The layers of the network
-	NetworkLayer* layers;
+	//contains all weights and biases.
+	//weights (connecting a neuron in the previous layer and a neuron in the current layer)
+	// indexed by [layerGeneIndex + outputCount + currentNeuron * outputCount + previousNeuron]
+	//biases indexed by [layerGeneIndex + biasIndex]
+	float* genes;
+	// An array used to store activation values. for usage inside of the network
+	float* activations;
+	// Data about the layers of the network (output neuron count & gene index)
+	struct Layer{
+		// the index into the gene array
+		unsigned int geneIndex;
+		// The number of neurons in the layer
+		unsigned int outputCount;
+	} *layers;
 	//Number of layers (not including input layer)
 	unsigned int layerCount;
+	//Total number of genes
+	unsigned int geneCount;
+	//Number of input neurons into the first layer
+	unsigned int inputCount;
+	//The amount the activation is translated in the final activation array
+	int activationsTranslation;
 };
 

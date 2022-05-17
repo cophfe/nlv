@@ -4,6 +4,8 @@
 #include <thread>
 #include "Maths.h"
 #include <iostream>
+#include <random>
+#include <algorithm>
 
 typedef void(*EvolverStepCallback)(const NetworkEvolver& evolver, NetworkOrganism& organism, int organismIndex);
 typedef void(*EvolverGenerationCallback)(const NetworkEvolver& evolver, NetworkOrganism* organisms);
@@ -13,9 +15,9 @@ typedef void(*EvolverGenerationCallback)(const NetworkEvolver& evolver, NetworkO
 enum class EvolverMutationType : char
 {
 	// The gene is set to a random value between -1 and 1
-	Randomized,
+	Set,
 	// The gene has a random value from a normal distribution added to it (mean 0, standard deviation 1, clamped between -1 and 1)
-	Guassan
+	Add
 };
 
 // How the parents used for crossover are selected
@@ -23,11 +25,13 @@ enum class EvolverSelectionType : char
 {
 	// Parents are selected based on the percentage of total fitness they have
 	FitnessProportional,
+	// Similar to fitness proportional but it gives lower fitness organisms a chance of selection
+	StochasticUniversal,
 	// Parents are selected based on their fitness rank
 	Ranked,
-	// A tournament is performed between all in the population. 
+	// A tournament is performed on the population based on fitness, the winners are selected. 
 	Tournament,
-	// https://pdfhall.com/chapter-05-the-boltzmann-selection-procedure_5bc2aef2097c47e5298b4598.html
+	// A selection type that tries to avoid premature convergance by adapting based on fitness range
 	Boltzman
 };
 
@@ -36,8 +40,8 @@ enum class EvolverCrossoverType : char
 {
 	// Chooses which parent a gene is taken from with a 50% chance for either parent
 	Uniform,
-	// Chooses which parent a gene is taken from using a chance based on the proportion of fitness values between parents
-	UniformProportional,
+	// chooses a random point on the genome. one side's genes will be taken from p1, the other p2
+	Point,
 	// Linearly combines the genes from the two parent genomes
 	Arithmetic,
 	// Linearly combines the genes from the two parent genomes, interpolated based on the proportion of fitness values between them
@@ -55,10 +59,10 @@ public:
 	NetworkEvolverDefinition(Network& networkTemplate, unsigned int generationSize, unsigned int maxSteps,
 		float elitePercent, float mutationRate, EvolverStepCallback stepFunction, EvolverMutationType mutationType, EvolverCrossoverType crossoverType,
 		EvolverSelectionType selectionType, bool threadedStepping, EvolverGenerationCallback startFunction,
-		EvolverGenerationCallback endFunction)
+		EvolverGenerationCallback endFunction, unsigned int seed)
 		: networkTemplate(networkTemplate), generationSize(generationSize), maxSteps(maxSteps), elitePercent(elitePercent),
 		mutationRate(mutationRate), stepFunction(stepFunction), startFunction(startFunction), endFunction(endFunction),
-		mutationType(mutationType), crossoverType(crossoverType), selectionType(selectionType), threadedStepping(threadedStepping)
+		mutationType(mutationType), crossoverType(crossoverType), selectionType(selectionType), threadedStepping(threadedStepping), seed(seed)
 	{}
 
 	Network& networkTemplate;
@@ -67,6 +71,7 @@ public:
 	EvolverGenerationCallback endFunction;
 	unsigned int generationSize;
 	unsigned int maxSteps;
+	unsigned int seed;
 	float elitePercent;
 	float mutationRate;
 	EvolverMutationType mutationType;
@@ -76,9 +81,9 @@ public:
 };
 
 
-//This evolver will create a markov chain
+//This evolver works best with problems that can be answered using a markov chain
 //if a descision can not be made exclusively using the previous state, it will probably not work great
-//if the user inputs the previous states into the network, this isn't necessarily true.
+//if the user inputs data from previous states into the network, this isn't necessarily true 
 class NetworkEvolver
 {
 public:
@@ -101,16 +106,44 @@ public:
 	// Calculates the range of fitnesses in the last generation
 	float FindFitnessRange() const;
 	// Returns the array containing the last generation of organisms
-	inline const NetworkOrganism const* GetGeneration() const { return organisms; };
+	inline const NetworkOrganism const* GetOrganisms() const { return organisms; }
+	inline unsigned int GetGeneration() const { return currentGeneration; }
 	// Get the amount of organisms in a generation
-	inline unsigned int GetGenerationSize() const { return generationSize; };
+	inline unsigned int GetPopulation() const { return population; }
+	//return the user defined pointer
+	inline void* GetUserPointer() const { return userPointer; }
 
+	inline void SetUserPointer(void* ptr) { userPointer = ptr; }
+	inline void SetMutationRate(float rate) { mutationRate = rate; }
+	inline void SetElitePercent(float percent) { elitePercent = percent; }
+	inline void SetThreaded(bool threaded) { threadedStepping = threaded; }
+	inline void SetMaxSteps(unsigned int max) { maxSteps = max; }
 private:
 	// Create the next generation based on values from the last generation
 	void CreateNewGen();
+	//Selection functions
+	NetworkOrganism& SelectionFitnessProportional(float inverseTotalFitness, float fitnessAddition);
+	//Crossover functions
+	void Crossover(NetworkOrganism& child, NetworkOrganism& p1, NetworkOrganism& p2);
+	//Mutate functions
+	void MutateSet(NetworkOrganism& org);
+	void MutateAdd(NetworkOrganism& org);
 	// Step through the current generation
 	void StepGen();
 
+	struct EvolverRandom {
+		std::default_random_engine engine;
+		std::uniform_real_distribution<float> dist = std::uniform_real_distribution<float>(-1.0f, 1.0f);
+		std::normal_distribution<float> guassan = std::normal_distribution<float>(0, 1.0f);
+
+		//between -1 and 1
+		inline float Value() { return dist(engine); }
+		//between 0 and 1
+		inline float Chance() { return dist(engine) * 0.5f + 1.0f; }
+		//value on normal distribution
+		inline float Normal() { return guassan(engine); }
+		inline unsigned int ChanceIndex(unsigned int size) { return Chance() * size; }
+	} random;
 	// Called for each organism for every step. Allows the user to modify values used for the organism's next step
 	// Inside this callback no values accessed by other organisms should be modified.
 	EvolverStepCallback stepCallback;
@@ -119,10 +152,12 @@ private:
 	EvolverGenerationCallback startCallback;
 	//Called once at the end of a generation. For whatever the user needs.
 	EvolverGenerationCallback endCallback;
+	//User pointer, pointing to whatever they want it to point to
+	void* userPointer;
 	// the organisms in the current generation. Not accessible outside of the evolver.
 	NetworkOrganism* organisms;
 	// The number of organisms in a given generation
-	unsigned int generationSize;
+	unsigned int population;
 	// The size of the neural networks' input and output arrays
 	unsigned int neuralInputSize, neuralOutputSize;
 	// The percentage chance that a gene is mutated
