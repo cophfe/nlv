@@ -58,11 +58,11 @@ public:
 	NetworkEvolverDefinition() = default;
 	NetworkEvolverDefinition(Network& networkTemplate, unsigned int generationSize, unsigned int maxSteps,
 		float elitePercent, float mutationRate, EvolverStepCallback stepFunction, EvolverMutationType mutationType, EvolverCrossoverType crossoverType,
-		EvolverSelectionType selectionType, bool threadedStepping, EvolverGenerationCallback startFunction,
+		EvolverSelectionType selectionType, EvolverGenerationCallback startFunction,
 		EvolverGenerationCallback endFunction, unsigned int seed)
 		: networkTemplate(networkTemplate), generationSize(generationSize), maxSteps(maxSteps), elitePercent(elitePercent),
 		mutationRate(mutationRate), stepFunction(stepFunction), startFunction(startFunction), endFunction(endFunction),
-		mutationType(mutationType), crossoverType(crossoverType), selectionType(selectionType), threadedStepping(threadedStepping), seed(seed)
+		mutationType(mutationType), crossoverType(crossoverType), selectionType(selectionType), seed(seed)
 	{}
 
 	Network& networkTemplate;
@@ -77,7 +77,6 @@ public:
 	EvolverMutationType mutationType;
 	EvolverCrossoverType crossoverType;
 	EvolverSelectionType selectionType;
-	bool threadedStepping;
 };
 
 
@@ -90,6 +89,7 @@ public:
 	// Create network evolver from a network evolver definition
 	NetworkEvolver(const NetworkEvolverDefinition& def);
 	~NetworkEvolver();
+	//yes I am lazy, you noticed!
 	NetworkEvolver(const NetworkEvolver& other) = delete;
 	NetworkEvolver& operator=(const NetworkEvolver& other) = delete;
 	// Load data
@@ -116,7 +116,6 @@ public:
 	inline void SetUserPointer(void* ptr) { userPointer = ptr; }
 	inline void SetMutationRate(float rate) { mutationRate = rate; }
 	inline void SetElitePercent(float percent) { elitePercent = percent; }
-	inline void SetThreaded(bool threaded) { threadedStepping = threaded; }
 	inline void SetMaxSteps(unsigned int max) { maxSteps = max; }
 private:
 	// Create the next generation based on values from the last generation
@@ -139,10 +138,10 @@ private:
 		//between -1 and 1
 		inline float Value() { return dist(engine); }
 		//between 0 and 1
-		inline float Chance() { return dist(engine) * 0.5f + 1.0f; }
+		inline float Chance() { return (dist(engine) + 1.0f) * 0.5f; }
 		//value on normal distribution
 		inline float Normal() { return guassan(engine); }
-		inline unsigned int ChanceIndex(unsigned int size) { return Chance() * size; }
+		inline unsigned int ChanceIndex(unsigned int size) { return Chance() * (size - 1); }
 	} random;
 	// Called for each organism for every step. Allows the user to modify values used for the organism's next step
 	// Inside this callback no values accessed by other organisms should be modified.
@@ -168,9 +167,6 @@ private:
 	unsigned int maxSteps;
 	// The current generation index
 	unsigned int currentGeneration;
-	// Whether stepping is threaded or not. Disabling this will severely impact performance
-	// Note: mutation is still threaded
-	bool threadedStepping;
 	//The type of mutation used
 	EvolverMutationType mutationType;
 	//The type of crossover used

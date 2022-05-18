@@ -11,6 +11,7 @@ class Network
 {
 	friend NetworkEvolver;
 public:
+	Network(); //note: this initializes an empty network, which will not be able to do anything
 	Network(unsigned int inputs, std::initializer_list<unsigned int> hiddenLayerNeurons, unsigned int outputs);
 	~Network();
 	Network(const Network& other);
@@ -69,5 +70,7 @@ private:
 	unsigned int inputCount;
 	//The amount the activation is translated in the final activation array
 	int activationsTranslation;
+	//if the network is initialized
+	bool initialized;
 };
 

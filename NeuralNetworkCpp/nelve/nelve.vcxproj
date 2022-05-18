@@ -148,6 +148,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="NEATNetworkEvolver.h" />
     <ClInclude Include="NetworkOrganism.h" />
     <ClInclude Include="Maths.h" />
     <ClInclude Include="Network.h" />
@@ -155,6 +156,7 @@
     <ClInclude Include="NetworkLayer.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="NEATNetworkEvolver.cpp" />
     <ClCompile Include="Network.cpp" />
     <ClCompile Include="NetworkEvolver.cpp" />
     <ClCompile Include="NetworkLayer.cpp" />

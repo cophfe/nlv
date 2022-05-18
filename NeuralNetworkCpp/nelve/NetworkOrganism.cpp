@@ -1,9 +1,8 @@
 #include "NetworkOrganism.h"
 
 NetworkOrganism::NetworkOrganism(Network& networkToCopy)
-	: network(Network(networkToCopy)), fitness(0), continueStepping(true), steps(0)
+	: network(Network(networkToCopy)), fitness(0), continueStepping(true), steps(0), networkInputs(new float[network.GetInputCount()])
 {
-	networkInputs = new float[network.GetInputCount()];
 }
 
 NetworkOrganism::~NetworkOrganism()
@@ -20,6 +19,7 @@ NetworkOrganism::NetworkOrganism(const NetworkOrganism& other)
 	continueStepping(other.continueStepping)
 {
 	networkInputs = new float[other.network.GetInputCount()];
+	memcpy(other.networkInputs, networkInputs, sizeof(float) * other.network.GetInputCount());
 }
 
 NetworkOrganism& NetworkOrganism::operator=(const NetworkOrganism& other)
@@ -35,5 +35,13 @@ NetworkOrganism& NetworkOrganism::operator=(const NetworkOrganism& other)
 	fitness = other.fitness;
 	continueStepping = other.continueStepping;
 	networkInputs = new float[other.network.GetInputCount()];
+	memcpy(other.networkInputs, networkInputs, sizeof(float) * other.network.GetInputCount());
 	return *this;
+}
+
+void NetworkOrganism::Reset()
+{
+	fitness = 0;
+	continueStepping = true;
+	steps = 0;
 }

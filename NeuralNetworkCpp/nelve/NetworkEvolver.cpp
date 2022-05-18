@@ -2,7 +2,7 @@
 
 NetworkEvolver::NetworkEvolver(const NetworkEvolverDefinition& def)
 	: population(def.generationSize), maxSteps(def.maxSteps), elitePercent(def.elitePercent), 
-	mutationRate(def.mutationRate), stepCallback(def.stepFunction), startCallback(def.startFunction), endCallback(def.endFunction), threadedStepping(def.threadedStepping),
+	mutationRate(def.mutationRate), stepCallback(def.stepFunction), startCallback(def.startFunction), endCallback(def.endFunction),
 	mutationType(def.mutationType), selectionType(def.selectionType), crossoverType(def.crossoverType), currentGeneration(0)
 {
 	if (population == 0)
@@ -63,16 +63,21 @@ void NetworkEvolver::CreateNewGen()
 	std::vector<unsigned int> fitnessOrderedIndexes(population);
 	for (size_t i = 0; i < population; i++)
 		fitnessOrderedIndexes[i] = i;
-	std::sort(fitnessOrderedIndexes.begin(), fitnessOrderedIndexes.end(), [this](int a, int b) { return organisms[a].fitness < organisms[b].fitness; });
+	std::sort(fitnessOrderedIndexes.begin(), fitnessOrderedIndexes.end(), [this](int a, int b) { return organisms[a].fitness > organisms[b].fitness; });
 
 	//create new organism array
 	NetworkOrganism* newOrganisms = (NetworkOrganism*)(malloc(sizeof(NetworkOrganism) * population));
 	if (newOrganisms == nullptr)
 		throw std::runtime_error("Cannot allocate new organism array.");
+	memset(newOrganisms, 0, sizeof(NetworkOrganism) * population);
 
-	//copy elite over (should work as long as destructors aren't called in previous elites)
-	unsigned int eliteCount = std::max((unsigned int)(elitePercent * population), population);
-	memcpy(newOrganisms, organisms, eliteCount * sizeof(NetworkOrganism));
+	//Retain elite in next generation
+	unsigned int eliteCount = std::min((unsigned int)(elitePercent * population), population);
+	for (size_t i = 0; i < eliteCount; i++)
+	{
+		new (newOrganisms + i) NetworkOrganism(organisms[fitnessOrderedIndexes[i]]);
+		newOrganisms[i].Reset();
+	}
 	
 	//the rest of the newGeneration will be populated with children of the previous generation
 	int childIndex = eliteCount;
@@ -95,6 +100,7 @@ void NetworkEvolver::CreateNewGen()
 		{
 			NetworkOrganism& p1 = SelectionFitnessProportional(inverseTotalFitness, fitnessAddition);
 			NetworkOrganism& p2 = SelectionFitnessProportional(inverseTotalFitness, fitnessAddition);
+			new (newOrganisms + childIndex) NetworkOrganism(p1.network);
 			Crossover(newOrganisms[childIndex], p1, p2);
 			childIndex++;
 		}
@@ -148,8 +154,7 @@ void NetworkEvolver::CreateNewGen()
 	}
 	
 	//destroy previous generation
-	//don't destruct the elite (thanks free() for allowing this)
-	for (size_t i = eliteCount; i < population; i++)
+	for (size_t i = 0; i < population; i++)
 		(*(organisms + i)).~NetworkOrganism();
 	free(organisms);
 	
@@ -175,7 +180,9 @@ void NetworkEvolver::Crossover(NetworkOrganism& child, NetworkOrganism& p1, Netw
 	{
 		for (size_t i = 0; i < child.network.geneCount; i++)
 		{
-			child.network.genes[i] = random.Chance() > 0.5f ? p1.network.genes[i] : p2.network.genes[i];
+			if (random.Chance() > 0.5f)
+				child.network.genes[i] = p2.network.genes[i];
+			//otherwise child genes should be equal to p1 genes, which is already true since the child starts as a clone of p1
 		}
 	}
 		break;
@@ -211,53 +218,16 @@ void NetworkEvolver::MutateSet(NetworkOrganism& org)
 
 void NetworkEvolver::StepGen()
 {
-	if (threadedStepping)
+	
+	//loop through all organisms and step through them
+	for (size_t i = 0; i < population; i++)
 	{
-		//make a thread for each organism and step through them at the same time
-		//this could potentially make thousands of threads. its definitely better to have less threads doing a share of organisms each
-		//should also push the creation of this into runGeneration/runGenerations, making it possible to keep threads running over multiple generations
-		std::thread* threads = new std::thread[population];
-		for (size_t i = 0; i < population; i++)
+		for (; organisms[i].steps < maxSteps && organisms[i].continueStepping; organisms[i].steps++)
 		{
-			threads[i] = std::thread([i, this]()
-			{
-				//step through each organism
-				while (organisms[i].steps < maxSteps)
-				{
-					organisms[i].network.Evaluate(organisms[i].networkInputs, neuralInputSize);
-					stepCallback(*this, organisms[i], i);
-					if (!organisms[i].continueStepping)
-						return;
-					organisms[i].steps++;
-				}
-			});
+			organisms[i].network.Evaluate(organisms[i].networkInputs, neuralInputSize);
+			//call the step callback 
+			stepCallback(*this, organisms[i], i);
 		}
-		for (size_t i = 0; i < population; i++)
-		{
-			threads[i].join();
-		}
-	}
-	else
-	{
-		for (size_t i = 0; i < maxSteps; i++)
-		{
-			bool allDone = true;
-
-			//loop through all organisms and step through them
-			for (size_t i = 0; i < population; i++)
-			{
-				if (organisms[i].steps >= maxSteps || !organisms[i].continueStepping)
-					continue;
-				organisms[i].network.Evaluate(organisms[i].networkInputs, neuralInputSize);
-				//call the step callback
-				stepCallback(*this, organisms[i], i);
-				organisms[i].steps++;
-				allDone = false;
-			}
-			if (allDone)
-				break;
-		}
-
 	}
 }
 

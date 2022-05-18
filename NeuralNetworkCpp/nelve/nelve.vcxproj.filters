@@ -30,6 +30,9 @@
     <ClInclude Include="NetworkOrganism.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="NEATNetworkEvolver.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Network.cpp">
@@ -42,6 +45,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="NetworkOrganism.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NEATNetworkEvolver.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
