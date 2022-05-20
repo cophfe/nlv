@@ -9,6 +9,7 @@
 
 typedef void(*EvolverStepCallback)(const NetworkEvolver& evolver, NetworkOrganism& organism, int organismIndex);
 typedef void(*EvolverGenerationCallback)(const NetworkEvolver& evolver, NetworkOrganism* organisms);
+constexpr uint32_t steppingThreadCount = 5;
 
 // Note: in this class a gene is considered to be a weight or a bias in a neural network
 // When a gene is mutated, this decides how exactly that will take place
@@ -42,9 +43,12 @@ enum class EvolverCrossoverType : char
 	Uniform,
 	// chooses a random point on the genome. one side's genes will be taken from p1, the other p2
 	Point,
+	// chooses 2 random points on the genome. The inbetween genes will be taken from p2, the other genes will be taken from p1
+	TwoPoint,
 	// Linearly combines the genes from the two parent genomes
 	Arithmetic,
 	// Linearly combines the genes from the two parent genomes, interpolated based on the proportion of fitness values between them
+	// if either of the fitness values are negative, this will revert to regular arithmetic crossover.
 	ArithmeticProportional,
 	// idk what this one is but it sounds cool
 	Heuristic
@@ -56,27 +60,28 @@ struct NetworkEvolverDefinition
 {
 public:
 	NetworkEvolverDefinition() = default;
-	NetworkEvolverDefinition(Network& networkTemplate, unsigned int generationSize, unsigned int maxSteps,
+	NetworkEvolverDefinition(Network& networkTemplate, uint32_t generationSize, uint32_t maxSteps,
 		float elitePercent, float mutationRate, EvolverStepCallback stepFunction, EvolverMutationType mutationType, EvolverCrossoverType crossoverType,
 		EvolverSelectionType selectionType, EvolverGenerationCallback startFunction,
-		EvolverGenerationCallback endFunction, unsigned int seed)
+		EvolverGenerationCallback endFunction, bool threadedStepping, uint32_t seed)
 		: networkTemplate(networkTemplate), generationSize(generationSize), maxSteps(maxSteps), elitePercent(elitePercent),
 		mutationRate(mutationRate), stepFunction(stepFunction), startFunction(startFunction), endFunction(endFunction),
-		mutationType(mutationType), crossoverType(crossoverType), selectionType(selectionType), seed(seed)
+		mutationType(mutationType), crossoverType(crossoverType), selectionType(selectionType), seed(seed), threadedStepping(threadedStepping)
 	{}
 
 	Network& networkTemplate;
 	EvolverStepCallback stepFunction;
 	EvolverGenerationCallback startFunction;
 	EvolverGenerationCallback endFunction;
-	unsigned int generationSize;
-	unsigned int maxSteps;
-	unsigned int seed;
+	uint32_t generationSize;
+	uint32_t maxSteps;
+	uint32_t seed;
 	float elitePercent;
 	float mutationRate;
 	EvolverMutationType mutationType;
 	EvolverCrossoverType crossoverType;
 	EvolverSelectionType selectionType;
+	bool threadedStepping;
 };
 
 
@@ -100,23 +105,26 @@ public:
 	//////////////////////////////////////std::string SaveToString();
 	// Create the new generation, step through
 	void EvaluateGeneration();
-	void EvaluateGenerations(unsigned int count);
+	void EvaluateGenerations(uint32_t count);
 	// Finds the best performing organism in the last generation
 	const NetworkOrganism& FindBestOrganism() const;
 	// Calculates the range of fitnesses in the last generation
 	float FindFitnessRange() const;
 	// Returns the array containing the last generation of organisms
 	inline const NetworkOrganism const* GetOrganisms() const { return organisms; }
-	inline unsigned int GetGeneration() const { return currentGeneration; }
+	inline uint32_t GetGeneration() const { return currentGeneration; }
 	// Get the amount of organisms in a generation
-	inline unsigned int GetPopulation() const { return population; }
-	//return the user defined pointer
+	inline uint32_t GetPopulation() const { return population; }
+	// Return the user defined pointer
 	inline void* GetUserPointer() const { return userPointer; }
+	// Returns if stepping is threaded or not
+	inline bool GetThreadedStepping() { return threadedStepping; }
 
 	inline void SetUserPointer(void* ptr) { userPointer = ptr; }
 	inline void SetMutationRate(float rate) { mutationRate = rate; }
 	inline void SetElitePercent(float percent) { elitePercent = percent; }
-	inline void SetMaxSteps(unsigned int max) { maxSteps = max; }
+	inline void SetMaxSteps(uint32_t max) { maxSteps = max; }
+	inline void SetThreadedStepping(bool threaded) { threadedStepping = threaded; }
 private:
 	// Create the next generation based on values from the last generation
 	void CreateNewGen();
@@ -141,8 +149,10 @@ private:
 		inline float Chance() { return (dist(engine) + 1.0f) * 0.5f; }
 		//value on normal distribution
 		inline float Normal() { return guassan(engine); }
-		inline unsigned int ChanceIndex(unsigned int size) { return Chance() * (size - 1); }
+		inline uint32_t ChanceIndex(uint32_t size) { return Chance() * (size - 1); }
 	} random;
+	//litteraly an array of ints used to index into the organisms array
+	std::vector<uint32_t> fitnessOrderedIndexes;
 	// Called for each organism for every step. Allows the user to modify values used for the organism's next step
 	// Inside this callback no values accessed by other organisms should be modified.
 	EvolverStepCallback stepCallback;
@@ -156,22 +166,24 @@ private:
 	// the organisms in the current generation. Not accessible outside of the evolver.
 	NetworkOrganism* organisms;
 	// The number of organisms in a given generation
-	unsigned int population;
+	uint32_t population;
 	// The size of the neural networks' input and output arrays
-	unsigned int neuralInputSize, neuralOutputSize;
+	uint32_t neuralInputSize, neuralOutputSize;
 	// The percentage chance that a gene is mutated
 	float mutationRate;
 	// The percentage of individuals from one generation who are directly cloned to the next generation
 	float elitePercent;
 	// The maximum number of steps an organism can take
-	unsigned int maxSteps;
+	uint32_t maxSteps;
 	// The current generation index
-	unsigned int currentGeneration;
+	uint32_t currentGeneration;
 	//The type of mutation used
 	EvolverMutationType mutationType;
 	//The type of crossover used
 	EvolverCrossoverType crossoverType;
 	//The type of selection used
 	EvolverSelectionType selectionType;
+	//Whether stepping through organisms is threaded or not.
+	bool threadedStepping;
 };
 

@@ -12,8 +12,8 @@ void SnakeGame::Run()
 {
 	//best i have had so far is 1 hidden layer with 6 neurons
 	Network network = Network(4, {6}, 3);
-	NetworkEvolverDefinition def(network, POPULATION_SIZE, MAX_STEPS, 0.2f, 0.03f, StepFunction, EvolverMutationType::Set, EvolverCrossoverType::Uniform, 
-		EvolverSelectionType::FitnessProportional, OnStartGeneration, nullptr, time(0));
+	NetworkEvolverDefinition def(network, POPULATION_SIZE, MAX_STEPS, 0.02f, 0.2f, StepFunction, EvolverMutationType::Set, EvolverCrossoverType::Uniform, 
+		EvolverSelectionType::FitnessProportional, OnStartGeneration, nullptr, false, time(0));
 	NetworkEvolver evolver(def);
 	evolver.SetUserPointer(this);
 	SetupStartSystem();
@@ -47,10 +47,13 @@ void SnakeGame::Run()
 	}
 	averageFitness /= evolver.GetPopulation();
 	bool lappingGenerations = false;
+	lastTime = std::chrono::high_resolution_clock::now();
 
 	while (!WindowShouldClose())
 	{
 		std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
+		deltaTime = (float)std::chrono::duration_cast<std::chrono::duration<double>>(start - lastTime).count();
+		lastTime = start;
 
 		BeginDrawing();
 		ClearBackground(BLACK);
@@ -161,10 +164,6 @@ void SnakeGame::Run()
 		DrawText(txt4.c_str(), 400, 565, 20, WHITE);
 		DrawSnakeGame(testOrganism.system, Coord{ 580, 185 }, 400);
 		EndDrawing();
-
-		std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
-		deltaTime = (float)std::chrono::duration_cast<std::chrono::duration<double>>(end - start).count();
-
 	}
 }
 
@@ -324,10 +323,10 @@ SnakeGame::Direction SnakeGame::GetLocalDirection(Direction direction, Direction
 	switch (relativeDirection)
 	{
 	case SnakeGame::Direction::LEFT:
-		dir--;
+		dir++;
 		break;
 	case SnakeGame::Direction::RIGHT:
-		dir++;
+		dir--;
 		break;
 	case SnakeGame::Direction::DOWN:
 		dir += 2;
@@ -390,14 +389,23 @@ void SnakeGame::SetupStartSystem()
 
 void SnakeGame::DrawSnakeGame(SnakeSystem& system, Coord pos, short size)
 {
-	short cellSize = size / (GRID_SIZE + 2);
-	Coord bottomLeft = pos + Coord{cellSize, cellSize};
+	float cellSize = (float)size / (GRID_SIZE + 2);
+	Vector2 bottomLeft = { pos.x + cellSize, pos.y + cellSize };
 	//draw border
 	DrawRectangle(pos.x, pos.y, size, size, GRAY);
-	DrawRectangle(bottomLeft.x, bottomLeft.y, size - cellSize * 2, size - cellSize * 2, BLACK);
+	DrawRectangle(pos.x + cellSize, pos.y + cellSize, size - cellSize * 2, size - cellSize * 2, BLACK);
 
 	//draw apple
 	DrawRectangle(bottomLeft.x + cellSize * system.appleCoord.x, bottomLeft.y + cellSize * system.appleCoord.y,
+		cellSize, cellSize, RED);
+
+	DrawRectangle(bottomLeft.x + cellSize * 30, bottomLeft.y + cellSize * 15,
+		cellSize, cellSize, RED);
+	DrawRectangle(bottomLeft.x + cellSize * -1, bottomLeft.y + cellSize * 15,
+		cellSize, cellSize, RED);
+	DrawRectangle(bottomLeft.x + cellSize * 15, bottomLeft.y + cellSize * 30,
+		cellSize, cellSize, RED);
+	DrawRectangle(bottomLeft.x + cellSize * 15, bottomLeft.y + cellSize * -1,
 		cellSize, cellSize, RED);
 
 	for (auto bodyPart : system.body)

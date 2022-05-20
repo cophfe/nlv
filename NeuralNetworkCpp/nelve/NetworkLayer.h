@@ -1,5 +1,6 @@
 #pragma once
 #include <cstring>
+#include <cstdint>
 class Network;
 class NetworkEvolver;
 
@@ -9,7 +10,7 @@ struct NetworkLayer
 	friend NetworkEvolver;
 
 private:
-	NetworkLayer(unsigned int inputCount, unsigned int outputCount);
+	NetworkLayer(uint32_t inputCount, uint32_t outputCount);
 	~NetworkLayer();
 	NetworkLayer(const NetworkLayer& other);
 	NetworkLayer& operator=(const NetworkLayer& other);
@@ -22,12 +23,12 @@ private:
 	// holds neuron bias values
 	float* biases;
 	// The number of neurons in the previous layer
-	unsigned int inputCount;
+	uint32_t inputCount;
 	// The number of neurons in the currentLayer
-	unsigned int outputCount;
+	uint32_t outputCount;
 	// The last activation values. stored for usage inside of the network
 	float* activations = nullptr;
 
-	float GetWeight(unsigned int currentNeuronIndex, unsigned int lastNeuronIndex) const;
-	void SetWeight(unsigned int currentNeuronIndex, unsigned int lastNeuronIndex, float value);
+	float GetWeight(uint32_t currentNeuronIndex, uint32_t lastNeuronIndex) const;
+	void SetWeight(uint32_t currentNeuronIndex, uint32_t lastNeuronIndex, float value);
 };

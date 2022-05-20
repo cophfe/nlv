@@ -12,7 +12,7 @@ Network::Network()
 	initialized = false;
 }
 
-Network::Network(unsigned int inputNeurons, std::initializer_list<unsigned int> hiddenLayerNeurons, unsigned int outputNeurons)
+Network::Network(uint32_t inputNeurons, std::initializer_list<uint32_t> hiddenLayerNeurons, uint32_t outputNeurons)
 	: inputCount(inputNeurons)
 {
 	if (inputNeurons == 0 || outputNeurons == 0)
@@ -24,11 +24,11 @@ Network::Network(unsigned int inputNeurons, std::initializer_list<unsigned int> 
 	layers = (Network::Layer*)malloc(sizeof(Network::Layer) * layerCount);
 
 	//get the input count for the first layer
-	unsigned int inputCount = inputNeurons;
+	uint32_t inputCount = inputNeurons;
 	//find the number of genes in the network
 	geneCount = 0;
 
-	unsigned int maxNeurons = 0;
+	uint32_t maxNeurons = 0;
 	size_t i = 0;
 	for (auto&& layerOutputs : hiddenLayerNeurons)
 	{
@@ -153,7 +153,7 @@ Network& Network::operator=(Network&& other)
 	return *this;
 }
 
-float const* Network::Evaluate(float* input, unsigned int inputCount)
+float const* Network::Evaluate(float* input, uint32_t inputCount)
 {
 #ifdef _DEBUG
 	if (input == nullptr)
@@ -164,7 +164,7 @@ float const* Network::Evaluate(float* input, unsigned int inputCount)
 		throw std::runtime_error("Can not evaluate an uninitialized network");
 #endif
 	//make sure the final layer output isn't offset from the activations array
-	unsigned int t = layerCount % 2 == 0 ? 0 : activationsTranslation;
+	uint32_t t = layerCount % 2 == 0 ? 0 : activationsTranslation;
 
 	//iterate over the layers, each layer taking the previous layer's output as input
 	//both input and output are stored in the activations array
@@ -216,7 +216,7 @@ void Network::RandomizeValues()
 		genes[i] = dist(rEngine);
 }
 
-void Network::RandomizeValues(unsigned int seed)
+void Network::RandomizeValues(uint32_t seed)
 {
 #ifdef _DEBUG
 	if (!initialized)
@@ -241,7 +241,7 @@ void Network::RandomizeValues(std::default_random_engine& randEngine)
 		genes[i] = dist(randEngine);
 }
 
-float Network::GetWeight(unsigned int layer, unsigned int currentNeuron, unsigned int previousNeuron) const
+float Network::GetWeight(uint32_t layer, uint32_t currentNeuron, uint32_t previousNeuron) const
 {
 #ifdef _DEBUG
 	if (layer >= layerCount)
@@ -259,7 +259,7 @@ float Network::GetWeight(unsigned int layer, unsigned int currentNeuron, unsigne
 	return genes[l.geneIndex + l.outputCount + previousNeuron * l.outputCount + currentNeuron];
 }
 
-void Network::SetWeight(unsigned int layer, unsigned int currentNeuron, unsigned int previousNeuron, float value)
+void Network::SetWeight(uint32_t layer, uint32_t currentNeuron, uint32_t previousNeuron, float value)
 {
 #ifdef _DEBUG
 	if (layer >= layerCount)
@@ -277,7 +277,7 @@ void Network::SetWeight(unsigned int layer, unsigned int currentNeuron, unsigned
 	genes[l.geneIndex + l.outputCount + previousNeuron * l.outputCount + currentNeuron] = value;
 }
 
-float Network::GetBias(unsigned int layer, unsigned int neuronIndex) const
+float Network::GetBias(uint32_t layer, uint32_t neuronIndex) const
 {
 #ifdef _DEBUG
 	if (layer >= layerCount)
@@ -291,7 +291,7 @@ float Network::GetBias(unsigned int layer, unsigned int neuronIndex) const
 	return genes[layers[layer].geneIndex + neuronIndex];
 }
 
-void Network::SetBias(unsigned int layer, unsigned int neuronIndex, float value)
+void Network::SetBias(uint32_t layer, uint32_t neuronIndex, float value)
 {
 #ifdef _DEBUG
 	if (layer > layerCount)

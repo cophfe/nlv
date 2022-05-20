@@ -16,7 +16,7 @@ private:
 	// The inputs to the organism's brain.
 	float* networkInputs;
 	// The amount of steps the organism has taken
-	unsigned int steps;
+	uint32_t steps;
 
 	void Reset();
 public:
@@ -31,6 +31,6 @@ public:
 	inline float* GetNetworkInputArray() { return networkInputs; }
 	const Network& GetNetwork() const { return network; }
 	float GetFitness() const { return fitness; }
-	unsigned int GetStepsTaken() const { return steps; }
+	uint32_t GetStepsTaken() const { return steps; }
 };
 

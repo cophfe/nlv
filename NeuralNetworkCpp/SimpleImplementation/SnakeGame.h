@@ -67,5 +67,6 @@ private:
 	std::uniform_int_distribution<short> dist = std::uniform_int_distribution<short>(0, GRID_SIZE - 1);
 	SnakeSystem systems[POPULATION_SIZE];
 	float deltaTime;
+	std::chrono::high_resolution_clock::time_point lastTime;
 };
 

@@ -1,6 +1,6 @@
 #include "NetworkLayer.h"
 
-NetworkLayer::NetworkLayer(unsigned int inputCount, unsigned int outputCount)
+NetworkLayer::NetworkLayer(uint32_t inputCount, uint32_t outputCount)
 {
 	this->inputCount = inputCount;
 	this->outputCount = outputCount;
@@ -108,13 +108,13 @@ NetworkLayer& NetworkLayer::operator=(NetworkLayer&& other)
 	return *this;
 }
 
-float NetworkLayer::GetWeight(unsigned int currentNeuronIndex, unsigned int lastNeuronIndex) const
+float NetworkLayer::GetWeight(uint32_t currentNeuronIndex, uint32_t lastNeuronIndex) const
 {
 	//return weight at index [currentNeuronIndex, lastNeuronIndex]
 	return weights[lastNeuronIndex * outputCount + currentNeuronIndex];
 }
 
-void NetworkLayer::SetWeight(unsigned int currentNeuronIndex, unsigned int lastNeuronIndex, float value)
+void NetworkLayer::SetWeight(uint32_t currentNeuronIndex, uint32_t lastNeuronIndex, float value)
 {
 	//set weight at index [currentNeuronIndex, lastNeuronIndex] to value
 	weights[lastNeuronIndex * outputCount + currentNeuronIndex] = value;
