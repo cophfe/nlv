@@ -2,14 +2,6 @@
 #include <crtdbg.h>
 #include "SnakeGame.h"
 
-static void StepFunction(const NetworkEvolver& evolver, NetworkOrganism& organism, int organismIndex)
-{
-	//for threaded:
-	//organism.fitness = std::random_device::random_device()();
-	//threading has to be false for this
-	organism.fitness = (float)rand() / RAND_MAX;
-}
-
 void main()
 {
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);

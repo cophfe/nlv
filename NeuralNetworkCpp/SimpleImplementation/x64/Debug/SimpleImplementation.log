@@ -1,1 +1,53 @@
-﻿  SimpleImplementation.vcxproj -> C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\x64\Debug\SimpleImplementation.exe
+﻿  SnakeGame.cpp
+C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\nelve\NetworkEvolver.h(119,31): warning C4114: same type qualifier used more than once
+C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\nelve\NetworkEvolver.h(173,64): warning C4244: 'return': conversion from 'float' to 'uint32_t', possible loss of data
+C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\SimpleImplementation\Button.h(73,32): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\SimpleImplementation\SnakeGame.cpp(7,18): warning C4244: 'argument': conversion from 'time_t' to 'unsigned int', possible loss of data
+C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\SimpleImplementation\SnakeGame.cpp(16,91): warning C4244: 'argument': conversion from 'time_t' to 'uint32_t', possible loss of data
+C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\SimpleImplementation\SnakeGame.cpp(42,20): warning C4018: '<': signed/unsigned mismatch
+C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\SimpleImplementation\SnakeGame.cpp(106,22): warning C4018: '<': signed/unsigned mismatch
+C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\SimpleImplementation\SnakeGame.cpp(228,43): warning C4838: conversion from 'int' to 'float' requires a narrowing conversion
+C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\SimpleImplementation\SnakeGame.cpp(228,43): warning C4244: 'initializing': conversion from 'int' to 'float', possible loss of data
+C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\SimpleImplementation\SnakeGame.cpp(228,73): warning C4838: conversion from 'int' to 'float' requires a narrowing conversion
+C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\SimpleImplementation\SnakeGame.cpp(228,73): warning C4244: 'initializing': conversion from 'int' to 'float', possible loss of data
+C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\SimpleImplementation\SnakeGame.cpp(396,78): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\SimpleImplementation\SnakeGame.cpp(396,57): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\SimpleImplementation\SnakeGame.cpp(396,40): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\SimpleImplementation\SnakeGame.cpp(396,22): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\SimpleImplementation\SnakeGame.cpp(400,13): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\SimpleImplementation\SnakeGame.cpp(400,3): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\SimpleImplementation\SnakeGame.cpp(399,76): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\SimpleImplementation\SnakeGame.cpp(399,29): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\SimpleImplementation\SnakeGame.cpp(403,13): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\SimpleImplementation\SnakeGame.cpp(403,3): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\SimpleImplementation\SnakeGame.cpp(402,59): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\SimpleImplementation\SnakeGame.cpp(402,29): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\SimpleImplementation\SnakeGame.cpp(405,13): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\SimpleImplementation\SnakeGame.cpp(405,3): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\SimpleImplementation\SnakeGame.cpp(404,59): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\SimpleImplementation\SnakeGame.cpp(404,29): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\SimpleImplementation\SnakeGame.cpp(407,13): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\SimpleImplementation\SnakeGame.cpp(407,3): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\SimpleImplementation\SnakeGame.cpp(406,59): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\SimpleImplementation\SnakeGame.cpp(406,29): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\SimpleImplementation\SnakeGame.cpp(409,13): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\SimpleImplementation\SnakeGame.cpp(409,3): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\SimpleImplementation\SnakeGame.cpp(408,59): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\SimpleImplementation\SnakeGame.cpp(408,29): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\SimpleImplementation\SnakeGame.cpp(414,14): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\SimpleImplementation\SnakeGame.cpp(414,4): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\SimpleImplementation\SnakeGame.cpp(413,68): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\SimpleImplementation\SnakeGame.cpp(413,30): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\SimpleImplementation\SnakeGame.cpp(419,14): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\SimpleImplementation\SnakeGame.cpp(419,4): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\SimpleImplementation\SnakeGame.cpp(418,74): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\SimpleImplementation\SnakeGame.cpp(418,30): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\SimpleImplementation\SnakeGame.cpp(439,98): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\SimpleImplementation\SnakeGame.cpp(439,73): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\SimpleImplementation\SnakeGame.cpp(439,48): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\SimpleImplementation\SnakeGame.cpp(439,23): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\SimpleImplementation\SnakeGame.cpp(440,50): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\SimpleImplementation\SnakeGame.cpp(440,25): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
+C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\SimpleImplementation\Button.h(25): warning C4172: returning address of local variable or temporary
+C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\SimpleImplementation\Button.h(22): warning C4172: returning address of local variable or temporary
+  SimpleImplementation.vcxproj -> C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\x64\Debug\SimpleImplementation.exe

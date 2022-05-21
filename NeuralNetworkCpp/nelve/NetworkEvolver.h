@@ -9,7 +9,6 @@
 
 typedef void(*EvolverStepCallback)(const NetworkEvolver& evolver, NetworkOrganism& organism, int organismIndex);
 typedef void(*EvolverGenerationCallback)(const NetworkEvolver& evolver, NetworkOrganism* organisms);
-constexpr uint32_t steppingThreadCount = 5;
 
 // Note: in this class a gene is considered to be a weight or a bias in a neural network
 // When a gene is mutated, this decides how exactly that will take place
@@ -61,12 +60,16 @@ struct NetworkEvolverDefinition
 public:
 	NetworkEvolverDefinition() = default;
 	NetworkEvolverDefinition(Network& networkTemplate, uint32_t generationSize, uint32_t maxSteps,
-		float elitePercent, float mutationRate, EvolverStepCallback stepFunction, EvolverMutationType mutationType, EvolverCrossoverType crossoverType,
-		EvolverSelectionType selectionType, EvolverGenerationCallback startFunction,
-		EvolverGenerationCallback endFunction, bool threadedStepping, uint32_t seed)
+		float elitePercent, float mutationRate, EvolverStepCallback stepFunction, 
+		EvolverMutationType mutationType = EvolverMutationType::Set, 
+		EvolverCrossoverType crossoverType = EvolverCrossoverType::Uniform,
+		EvolverSelectionType selectionType = EvolverSelectionType::Ranked, EvolverGenerationCallback startFunction = nullptr,
+		EvolverGenerationCallback endFunction = nullptr, bool threadedStepping = false, bool staticEpisodes = false, uint32_t seed = 0, 
+		uint32_t episodeThreadCount = 5, uint32_t tournamentSize = 0)
 		: networkTemplate(networkTemplate), generationSize(generationSize), maxSteps(maxSteps), elitePercent(elitePercent),
 		mutationRate(mutationRate), stepFunction(stepFunction), startFunction(startFunction), endFunction(endFunction),
-		mutationType(mutationType), crossoverType(crossoverType), selectionType(selectionType), seed(seed), threadedStepping(threadedStepping)
+		mutationType(mutationType), crossoverType(crossoverType), selectionType(selectionType), seed(seed),
+		threadedEpisodes(threadedStepping), staticEpisodes(staticEpisodes), episodeThreadCount(episodeThreadCount), tournamentSize(tournamentSize)
 	{}
 
 	Network& networkTemplate;
@@ -81,7 +84,10 @@ public:
 	EvolverMutationType mutationType;
 	EvolverCrossoverType crossoverType;
 	EvolverSelectionType selectionType;
-	bool threadedStepping;
+	bool threadedEpisodes;
+	bool staticEpisodes;
+	uint32_t episodeThreadCount;
+	uint32_t tournamentSize;
 };
 
 
@@ -103,7 +109,7 @@ public:
 	// Save data
 	//////////////////////////////////////void SaveToFile(std::string file);
 	//////////////////////////////////////std::string SaveToString();
-	// Create the new generation, step through
+	// Create the new generation and run an episode to determine fitness values
 	void EvaluateGeneration();
 	void EvaluateGenerations(uint32_t count);
 	// Finds the best performing organism in the last generation
@@ -119,24 +125,43 @@ public:
 	inline void* GetUserPointer() const { return userPointer; }
 	// Returns if stepping is threaded or not
 	inline bool GetThreadedStepping() { return threadedStepping; }
+	inline EvolverStepCallback GetStepCallback() { return stepCallback; }
+	inline EvolverGenerationCallback GetStartCallback() { return startCallback; }
+	inline EvolverGenerationCallback GetEndCallback() { return endCallback; }
+	inline EvolverCrossoverType GetCrossoverType() { return crossoverType; }
+	inline EvolverMutationType GetMutationType() { return mutationType; }
+	inline EvolverSelectionType GetSelectionType() { return selectionType; }
+	inline bool GetStaticEpisodes() { return staticEpisodes; }
+	inline uint32_t GetTournamentSize() { return tournamentSize; }
 
 	inline void SetUserPointer(void* ptr) { userPointer = ptr; }
 	inline void SetMutationRate(float rate) { mutationRate = rate; }
 	inline void SetElitePercent(float percent) { elitePercent = percent; }
 	inline void SetMaxSteps(uint32_t max) { maxSteps = max; }
 	inline void SetThreadedStepping(bool threaded) { threadedStepping = threaded; }
+	inline void SetStepCallback (EvolverStepCallback callback) { stepCallback = callback; }
+	inline void SetStartCallback (EvolverGenerationCallback callback) { startCallback = callback; }
+	inline void SetEndCallback (EvolverGenerationCallback callback) { endCallback = callback; }
+	inline void SetCrossoverType (EvolverCrossoverType type) { crossoverType = type; }
+	inline void SetMutationType (EvolverMutationType type) { mutationType = type; }
+	inline void SetSelectionType (EvolverSelectionType type) { selectionType = type; }
+	inline void SetStaticEpisodes (bool staticEpisodes) { this->staticEpisodes = staticEpisodes; }
+	inline void SetTournamentSize(uint32_t size) { tournamentSize = std::max(3U, size); }
+
 private:
 	// Create the next generation based on values from the last generation
 	void CreateNewGen();
 	//Selection functions
 	NetworkOrganism& SelectionFitnessProportional(float inverseTotalFitness, float fitnessAddition);
-	//Crossover functions
+	NetworkOrganism& SelectionRanked(float inverseSumOfAllRanks);
+	//Crossover function
 	void Crossover(NetworkOrganism& child, NetworkOrganism& p1, NetworkOrganism& p2);
 	//Mutate functions
 	void MutateSet(NetworkOrganism& org);
 	void MutateAdd(NetworkOrganism& org);
 	// Step through the current generation
-	void StepGen();
+	void RunEpisode();
+	static void RunEpisodePerThread(NetworkEvolver* obj, uint32_t startIndex, uint32_t endIndex);
 
 	struct EvolverRandom {
 		std::default_random_engine engine;
@@ -152,7 +177,7 @@ private:
 		inline uint32_t ChanceIndex(uint32_t size) { return Chance() * (size - 1); }
 	} random;
 	//litteraly an array of ints used to index into the organisms array
-	std::vector<uint32_t> fitnessOrderedIndexes;
+	uint32_t* fitnessOrderedIndexes;
 	// Called for each organism for every step. Allows the user to modify values used for the organism's next step
 	// Inside this callback no values accessed by other organisms should be modified.
 	EvolverStepCallback stepCallback;
@@ -185,5 +210,11 @@ private:
 	EvolverSelectionType selectionType;
 	//Whether stepping through organisms is threaded or not.
 	bool threadedStepping;
+	//Whether every episode is the same as the last
+	bool staticEpisodes;
+	//The number of threads created
+	uint32_t episodeThreadCount;
+	//the size of the tournament if using tournament selection
+	uint32_t tournamentSize;
 };
 

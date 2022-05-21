@@ -13,7 +13,7 @@ void SnakeGame::Run()
 	//best i have had so far is 1 hidden layer with 6 neurons
 	Network network = Network(4, {6}, 3);
 	NetworkEvolverDefinition def(network, POPULATION_SIZE, MAX_STEPS, 0.02f, 0.2f, StepFunction, EvolverMutationType::Set, EvolverCrossoverType::Uniform, 
-		EvolverSelectionType::FitnessProportional, OnStartGeneration, nullptr, false, time(0));
+		EvolverSelectionType::FitnessProportional, OnStartGeneration, nullptr, false, true, time(0), 7);
 	NetworkEvolver evolver(def);
 	evolver.SetUserPointer(this);
 	SetupStartSystem();
@@ -392,7 +392,7 @@ void SnakeGame::DrawSnakeGame(SnakeSystem& system, Coord pos, short size)
 	float cellSize = (float)size / (GRID_SIZE + 2);
 	Vector2 bottomLeft = { pos.x + cellSize, pos.y + cellSize };
 	//draw border
-	DrawRectangle(pos.x, pos.y, size, size, GRAY);
+	DrawRectangle(pos.x, pos.y, size, size, DARKGRAY);
 	DrawRectangle(pos.x + cellSize, pos.y + cellSize, size - cellSize * 2, size - cellSize * 2, BLACK);
 
 	//draw apple
@@ -400,23 +400,23 @@ void SnakeGame::DrawSnakeGame(SnakeSystem& system, Coord pos, short size)
 		cellSize, cellSize, RED);
 
 	DrawRectangle(bottomLeft.x + cellSize * 30, bottomLeft.y + cellSize * 15,
-		cellSize, cellSize, RED);
+		cellSize, cellSize, GRAY);
 	DrawRectangle(bottomLeft.x + cellSize * -1, bottomLeft.y + cellSize * 15,
-		cellSize, cellSize, RED);
+		cellSize, cellSize, GRAY);
 	DrawRectangle(bottomLeft.x + cellSize * 15, bottomLeft.y + cellSize * 30,
-		cellSize, cellSize, RED);
+		cellSize, cellSize, GRAY);
 	DrawRectangle(bottomLeft.x + cellSize * 15, bottomLeft.y + cellSize * -1,
-		cellSize, cellSize, RED);
+		cellSize, cellSize, GRAY);
 
 	for (auto bodyPart : system.body)
 	{
 		DrawRectangle(bottomLeft.x + cellSize * bodyPart.x, bottomLeft.y + cellSize * bodyPart.y,
-			cellSize, cellSize, GRAY);
+			cellSize, cellSize, LIGHTGRAY);
 	}
 	if (system.body.size() > 0)
 	{
 		DrawRectangle(bottomLeft.x + cellSize * system.body[0].x, bottomLeft.y + cellSize * system.body[0].y,
-			cellSize, cellSize, DARKGRAY);
+			cellSize, cellSize, GRAY);
 
 		Vector2 dir = {0,0};
 		switch (system.movementDirection)
