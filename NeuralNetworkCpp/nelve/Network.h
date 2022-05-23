@@ -18,7 +18,10 @@ public:
 	Network(Network&& other);
 	Network& operator=(const Network& other);
 	Network& operator=(Network&& other);
-	
+
+	/// <returns>A neural network with the same layout as this one (but not the same values)</returns>
+	Network CloneNetworkLayout();
+
 	/// <param name="input">The activations of the input layer</param>
 	/// <param name="inputCount">The number of neurons in the input layer</param>
 	/// <returns>The output activations of the neural network</returns>

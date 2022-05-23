@@ -9,6 +9,9 @@
 
 typedef void(*EvolverStepCallback)(const NetworkEvolver& evolver, NetworkOrganism& organism, int organismIndex);
 typedef void(*EvolverGenerationCallback)(const NetworkEvolver& evolver, NetworkOrganism* organisms);
+typedef void(*EvolverCustomCrossoverCallback)(float* childGenes, const NetworkOrganism& p1, const NetworkOrganism& p2, float* p1Genes, float* p2Genes);
+typedef void(*EvolverCustomMutationCallback)(float* genes, const NetworkOrganism& organism);
+typedef NetworkOrganism* (*EvolverCustomSelectionCallback)(NetworkOrganism* organisms, NetworkOrganism*& selectedOrganism);
 
 // Note: in this class a gene is considered to be a weight or a bias in a neural network
 // When a gene is mutated, this decides how exactly that will take place
@@ -17,7 +20,9 @@ enum class EvolverMutationType : char
 	// The gene is set to a random value between -1 and 1
 	Set,
 	// The gene has a random value from a normal distribution added to it (mean 0, standard deviation 1, clamped between -1 and 1)
-	Add
+	Add,
+	// Calls a custom mutation function
+	Custom
 };
 
 // How the parents used for crossover are selected
@@ -25,14 +30,14 @@ enum class EvolverSelectionType : char
 {
 	// Parents are selected based on the percentage of total fitness they have
 	FitnessProportional,
-	// Similar to fitness proportional but it gives lower fitness organisms a chance of selection
-	StochasticUniversal,
 	// Parents are selected based on their fitness rank
 	Ranked,
 	// A tournament is performed on the population based on fitness, the winners are selected. 
 	Tournament,
 	// A selection type that tries to avoid premature convergance by adapting based on fitness range
-	Boltzman
+	//Boltzman,
+	// Calls a custom selection function
+	Custom
 };
 
 // How two parents from the previous generation are crossed over to create a child network
@@ -49,10 +54,8 @@ enum class EvolverCrossoverType : char
 	// Linearly combines the genes from the two parent genomes, interpolated based on the proportion of fitness values between them
 	// if either of the fitness values are negative, this will revert to regular arithmetic crossover.
 	ArithmeticProportional,
-	// idk what this one is but it sounds cool
-	Heuristic
-	//[no one point or two point crossover because there is no *good* 
-	//	way to represent the network as a 1D array without making weird ambiguous descisions]
+	// Calls a custom crossover function
+	Custom
 };
 
 struct NetworkEvolverDefinition
@@ -65,29 +68,37 @@ public:
 		EvolverCrossoverType crossoverType = EvolverCrossoverType::Uniform,
 		EvolverSelectionType selectionType = EvolverSelectionType::Ranked, EvolverGenerationCallback startFunction = nullptr,
 		EvolverGenerationCallback endFunction = nullptr, bool threadedStepping = false, bool staticEpisodes = false, uint32_t seed = 0, 
-		uint32_t episodeThreadCount = 5, uint32_t tournamentSize = 0)
+		float mutationScale = 1.0f, uint32_t episodeThreadCount = 5, uint32_t tournamentSize = 0,
+		EvolverCustomSelectionCallback selectionCallback = nullptr, EvolverCustomCrossoverCallback crossoverCallback = nullptr,
+		EvolverCustomMutationCallback mutationCallback = nullptr)
 		: networkTemplate(networkTemplate), generationSize(generationSize), maxSteps(maxSteps), elitePercent(elitePercent),
 		mutationRate(mutationRate), stepFunction(stepFunction), startFunction(startFunction), endFunction(endFunction),
 		mutationType(mutationType), crossoverType(crossoverType), selectionType(selectionType), seed(seed),
-		threadedEpisodes(threadedStepping), staticEpisodes(staticEpisodes), episodeThreadCount(episodeThreadCount), tournamentSize(tournamentSize)
+		threadedEpisodes(threadedStepping), staticEpisodes(staticEpisodes), episodeThreadCount(episodeThreadCount), 
+		tournamentSize(tournamentSize), mutationScale(mutationScale), selectionCallback(selectionCallback),
+		crossoverCallback(crossoverCallback), mutationCallback(mutationCallback)
 	{}
 
 	Network& networkTemplate;
 	EvolverStepCallback stepFunction;
 	EvolverGenerationCallback startFunction;
 	EvolverGenerationCallback endFunction;
+	EvolverCustomSelectionCallback selectionCallback; //for selectiontype::custom
+	EvolverCustomCrossoverCallback crossoverCallback; //for crossovertype::custom
+	EvolverCustomMutationCallback mutationCallback; //for mutationtype::custom
 	uint32_t generationSize;
 	uint32_t maxSteps;
 	uint32_t seed;
 	float elitePercent;
 	float mutationRate;
+	float mutationScale; //for mutationtype::add
+	uint32_t episodeThreadCount; //for threadedEpisodes == true
+	uint32_t tournamentSize; //for selectiontype::tournament
 	EvolverMutationType mutationType;
 	EvolverCrossoverType crossoverType;
 	EvolverSelectionType selectionType;
 	bool threadedEpisodes;
 	bool staticEpisodes;
-	uint32_t episodeThreadCount;
-	uint32_t tournamentSize;
 };
 
 
@@ -100,7 +111,7 @@ public:
 	// Create network evolver from a network evolver definition
 	NetworkEvolver(const NetworkEvolverDefinition& def);
 	~NetworkEvolver();
-	//yes I am lazy, you noticed!
+	//yes I am lazy, im so happy you noticed <3
 	NetworkEvolver(const NetworkEvolver& other) = delete;
 	NetworkEvolver& operator=(const NetworkEvolver& other) = delete;
 	// Load data
@@ -152,7 +163,7 @@ private:
 	// Create the next generation based on values from the last generation
 	void CreateNewGen();
 	//Selection functions
-	NetworkOrganism& SelectionFitnessProportional(float inverseTotalFitness, float fitnessAddition);
+	NetworkOrganism& SelectionFitnessProportional(float fitnessAddition);
 	NetworkOrganism& SelectionRanked(float inverseSumOfAllRanks);
 	//Crossover function
 	void Crossover(NetworkOrganism& child, NetworkOrganism& p1, NetworkOrganism& p2);
@@ -186,6 +197,10 @@ private:
 	EvolverGenerationCallback startCallback;
 	//Called once at the end of a generation. For whatever the user needs.
 	EvolverGenerationCallback endCallback;
+	//Custom callbacks
+	EvolverCustomSelectionCallback selectionCallback;
+	EvolverCustomCrossoverCallback crossoverCallback;
+	EvolverCustomMutationCallback mutationCallback;
 	//User pointer, pointing to whatever they want it to point to
 	void* userPointer;
 	// the organisms in the current generation. Not accessible outside of the evolver.
@@ -196,6 +211,8 @@ private:
 	uint32_t neuralInputSize, neuralOutputSize;
 	// The percentage chance that a gene is mutated
 	float mutationRate;
+	// The scale of change in a mutated gene when using MutationType::Add
+	float mutationScale;
 	// The percentage of individuals from one generation who are directly cloned to the next generation
 	float elitePercent;
 	// The maximum number of steps an organism can take

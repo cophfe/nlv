@@ -2,7 +2,7 @@
 
 SnakeGame::SnakeGame()
 {
-	SetConfigFlags(FLAG_MSAA_4X_HINT | FLAG_VSYNC_HINT);
+	SetConfigFlags(FLAG_MSAA_4X_HINT);// | FLAG_VSYNC_HINT);
 	InitWindow(1000, 600, "Snake Test");
 	random.seed(time(0));
 
@@ -11,9 +11,9 @@ SnakeGame::SnakeGame()
 void SnakeGame::Run()
 {
 	//best i have had so far is 1 hidden layer with 6 neurons
-	Network network = Network(4, {6}, 3);
+	Network network = Network(4, { 6 }, 3);
 	NetworkEvolverDefinition def(network, POPULATION_SIZE, MAX_STEPS, 0.02f, 0.2f, StepFunction, EvolverMutationType::Set, EvolverCrossoverType::Uniform, 
-		EvolverSelectionType::FitnessProportional, OnStartGeneration, nullptr, false, true, time(0), 7);
+		EvolverSelectionType::Ranked, OnStartGeneration, nullptr, true, false, time(0), 30);
 	NetworkEvolver evolver(def);
 	evolver.SetUserPointer(this);
 	SetupStartSystem();
@@ -143,7 +143,9 @@ void SnakeGame::Run()
 		if (testOrganism.running)
 		{
 			testOrganism.stepTimer += deltaTime;
-			if (testOrganism.stepTimer >= STEP_TIME || (IsKeyDown(KEY_SPACE)))
+			if (testOrganism.stepTimer >= STEP_TIME || (IsKeyDown(KEY_SPACE) && testOrganism.stepTimer >= 0.01f) 
+				|| (IsKeyDown(KEY_LEFT_CONTROL) && testOrganism.stepTimer >= 0.003f)
+				|| (IsKeyDown(KEY_LEFT_ALT)))
 			{
 				if (testOrganism.steps > MAX_STEPS)
 					testOrganism.running = false;
@@ -362,10 +364,10 @@ Coord SnakeGame::AddDirectionToCoord(Coord coord, Direction direction)
 void SnakeGame::SetupStartSystem()
 {
 	//the same every time:
-	static int seed = random();
-	startSystem.random.seed(seed);
+	//static int seed = random();
+	//startSystem.random.seed(seed);
 	//not the same every time
-	//startSystem.random.seed(random());
+	startSystem.random.seed(random());
 
 	startSystem.body.clear();
 	startSystem.movementDirection = Direction::DOWN;
@@ -379,9 +381,9 @@ void SnakeGame::SetupStartSystem()
 	do {
 		appleIntersecting = false;
 		//the same every time:
-		startSystem.appleCoord = Coord{ 0, 4 };
+		//startSystem.appleCoord = Coord{ 0, 4 };
 		//not the same every time
-		//startSystem.appleCoord = Coord{ dist(random), dist(random) };
+		startSystem.appleCoord = Coord{ dist(random), dist(random) };
 		for (Coord pos : startSystem.body)
 			appleIntersecting |= pos == startSystem.appleCoord;
 	} while (appleIntersecting);

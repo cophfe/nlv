@@ -4,7 +4,8 @@ NetworkEvolver::NetworkEvolver(const NetworkEvolverDefinition& def)
 	: population(def.generationSize), maxSteps(def.maxSteps), elitePercent(def.elitePercent),
 	mutationRate(def.mutationRate), stepCallback(def.stepFunction), startCallback(def.startFunction), endCallback(def.endFunction),
 	mutationType(def.mutationType), selectionType(def.selectionType), crossoverType(def.crossoverType), currentGeneration(0),
-	threadedStepping(def.threadedEpisodes), episodeThreadCount(def.episodeThreadCount), staticEpisodes(def.staticEpisodes)
+	threadedStepping(def.threadedEpisodes), episodeThreadCount(def.episodeThreadCount), staticEpisodes(def.staticEpisodes),
+	mutationScale(def.mutationScale)
 {
 	if (population == 0)
 		throw std::runtime_error("Generation size cannot be 0");
@@ -103,19 +104,19 @@ void NetworkEvolver::CreateNewGen()
 	{
 	case EvolverSelectionType::FitnessProportional:
 	{
-		float inverseTotalFitness = 0;
 		//if there are negative fitnesses, add an addition to fitness values to make them all more than 0
 		float fitnessAddition = -std::min(organisms[fitnessOrderedIndexes[population - 1]].fitness, 0.0f);
 
-		for (size_t i = 0; i < population; i++)
-			inverseTotalFitness += organisms[i].fitness;
-		inverseTotalFitness += fitnessAddition * population;
-		inverseTotalFitness = 1.0f / (inverseTotalFitness);
+		//float inverseTotalFitness = 0;
+		//for (size_t i = 0; i < population; i++)
+		//	inverseTotalFitness += organisms[i].fitness;
+		//inverseTotalFitness += fitnessAddition * population;
+		//inverseTotalFitness = 1.0f / (inverseTotalFitness);
 		
 		while (childIndex < population)
 		{
-			NetworkOrganism& p1 = SelectionFitnessProportional(inverseTotalFitness, fitnessAddition);
-			NetworkOrganism& p2 = SelectionFitnessProportional(inverseTotalFitness, fitnessAddition);
+			NetworkOrganism& p1 = SelectionFitnessProportional(fitnessAddition);
+			NetworkOrganism& p2 = SelectionFitnessProportional(fitnessAddition);
 
 			new (newOrganisms + childIndex) NetworkOrganism(p1.network);
 			Crossover(newOrganisms[childIndex], p1, p2);
@@ -128,13 +129,6 @@ void NetworkEvolver::CreateNewGen()
 		}
 	}
 		break;
-	case EvolverSelectionType::StochasticUniversal:
-	{
-		//https://en.wikipedia.org/wiki/Stochastic_universal_sampling
-	
-		
-	}
-	break;
 	case EvolverSelectionType::Ranked:
 	{
 		//1 / guass formula
@@ -197,13 +191,42 @@ void NetworkEvolver::CreateNewGen()
 			parents.push_back(p1);
 			parents.push_back(p2);
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
 		}
 	}
 		break;
-	case EvolverSelectionType::Boltzman:
+	//case EvolverSelectionType::Boltzman:
+	//{
+	//	//https://pdfhall.com/chapter-05-the-boltzmann-selection-procedure_5bc2aef2097c47e5298b4598.html
+	//	//a selection alogirthm that varies the selection pressure based on the 'homogenuity' of the population
+	//	//the more homogenous, the less selective
+
+
+
+	//	
+	//}
+	//	break;
+	case EvolverSelectionType::Custom:
 	{
-		//https://pdfhall.com/chapter-05-the-boltzmann-selection-procedure_5bc2aef2097c47e5298b4598.html
+		if (!selectionCallback)
+			throw std::runtime_error("Selection callback cannot be nullptr when selection type is custom");
+
+		NetworkOrganism* p1;
+		NetworkOrganism* p2;
+
+		while (childIndex < population)
+		{
+			selectionCallback(organisms, p1);
+			selectionCallback(organisms, p2);
+
+			new (newOrganisms + childIndex) NetworkOrganism(p1->network);
+			Crossover(newOrganisms[childIndex], *p1, *p2);
+			childIndex++;
+
+			//DEBUG ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			parents.push_back(p1);
+			parents.push_back(p2);
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		}
 	}
 		break;
 	default:
@@ -228,14 +251,25 @@ void NetworkEvolver::CreateNewGen()
 		for (size_t i = eliteCount; i < population; i++)
 		{
 			while(random.Chance() < mutationRate)
-				MutateAdd(newOrganisms[i]);
+				MutateSet(newOrganisms[i]);
 		}
 		break;
 	case EvolverMutationType::Add:
 		for (size_t i = eliteCount; i < population; i++)
 		{
 			while (random.Chance() < mutationRate)
-				MutateSet(newOrganisms[i]);
+				MutateAdd(newOrganisms[i]);
+		}
+		break;
+	case EvolverMutationType::Custom:
+		for (size_t i = eliteCount; i < population; i++)
+		{
+			if (!mutationCallback)
+				throw std::runtime_error("Mutation callback cannot be nullptr when mutation type is custom");
+			while (random.Chance() < mutationRate)
+			{
+				mutationCallback(organisms[i].network.genes, organisms[i]);
+			}
 		}
 		break;
 	default:
@@ -252,11 +286,11 @@ void NetworkEvolver::CreateNewGen()
 	organisms = newOrganisms;
 }
 
-NetworkOrganism& NetworkEvolver::SelectionFitnessProportional(float inverseTotalFitness, float fitnessAddition)
+NetworkOrganism& NetworkEvolver::SelectionFitnessProportional(float fitnessAddition)
 {
 	//stochastic acceptance based (faster generally)
 	uint32_t parentIndex; 
-	float inverseLargestFitness =1/ (organisms[fitnessOrderedIndexes[0]].fitness + fitnessAddition);
+	float inverseLargestFitness = 1.0f / (organisms[fitnessOrderedIndexes[0]].fitness + fitnessAddition);
 	do {
 		parentIndex = random.ChanceIndex(population);
 	} while (random.Chance() > (organisms[parentIndex].fitness + fitnessAddition) * inverseLargestFitness);
@@ -277,23 +311,25 @@ NetworkOrganism& NetworkEvolver::SelectionFitnessProportional(float inverseTotal
 
 NetworkOrganism& NetworkEvolver::SelectionRanked(float inverseSumOfAllRanks)
 {
-	//stochastic acceptance based
+	//stochastic acceptance based (not working)
+	/*
 	uint32_t parentIndex;
 	do {
 		parentIndex = random.ChanceIndex(population);
 	} while (random.Chance() > parentIndex * inverseSumOfAllRanks);
 	return organisms[fitnessOrderedIndexes[parentIndex]];
+	*/
 
-	//float probability = 0;
-	//float chance = random.Chance();
-	//for (size_t i = 0; i < population; i++)
-	//{
-	//	probability += parentIndex * inverseSumOfAllRanks;
-	//	if (chance <= probability)
-	//		return organisms[fitnessOrderedIndexes[i]];
-	//}
-	////otherwise something went wrong, but this will surely never happen right?
-	//return organisms[fitnessOrderedIndexes[population - 1]];
+	float probability = 0;
+	float chance = random.Chance();
+	for (size_t i = 0; i < population; i++)
+	{
+		probability += (population - (i + 1)) * inverseSumOfAllRanks;
+		if (chance <= probability)
+			return organisms[fitnessOrderedIndexes[i]];
+	}
+	//otherwise something went wrong, but this will surely never happen right?
+	return organisms[fitnessOrderedIndexes[population - 1]];
 
 }
 
@@ -315,7 +351,7 @@ void NetworkEvolver::Crossover(NetworkOrganism& child, NetworkOrganism& p1, Netw
 	case EvolverCrossoverType::Point:
 	{
 		uint32_t point = random.ChanceIndex(child.network.geneCount);
-		memcpy(child.network.genes + point, p2.network.genes, (child.network.geneCount - point) * sizeof(float));
+		memcpy(child.network.genes + point, p2.network.genes + point, (child.network.geneCount - point) * sizeof(float));
 	}
 		break;
 	case EvolverCrossoverType::TwoPoint:
@@ -330,7 +366,7 @@ void NetworkEvolver::Crossover(NetworkOrganism& child, NetworkOrganism& p1, Netw
 		}
 		else
 			size = point2 - point1;
-		memcpy(child.network.genes + point1, p2.network.genes, size * sizeof(float));
+		memcpy(child.network.genes + point1, p2.network.genes + point1, size * sizeof(float));
 	}
 	break;
 	case EvolverCrossoverType::Arithmetic:
@@ -344,16 +380,20 @@ void NetworkEvolver::Crossover(NetworkOrganism& child, NetworkOrganism& p1, Netw
 			t = 0.5f;
 		else
 			t = p1.fitness / (p1.fitness + p2.fitness);
-
 		for (size_t i = 0; i < child.network.geneCount; i++)
 			child.network.genes[i] = p1.network.genes[i] * t + (1 -t) * p2.network.genes[i];
 		break;
-	case EvolverCrossoverType::Heuristic:
-		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		// UNIMPLEMENTED
-		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	case EvolverCrossoverType::Custom:
+	{
+#ifdef _DEBUG
+		if (!crossoverCallback)
+			throw std::runtime_error("Crossover callback cannot be nullptr when crossover type is custom");
+#endif
+		crossoverCallback(child.network.genes, p1, p2, p1.network.genes, p2.network.genes);
+	}
 		break;
 	default:
+		throw std::runtime_error("Crossover type is incorrectly defined");
 		break;
 	}
 }
@@ -361,13 +401,13 @@ void NetworkEvolver::Crossover(NetworkOrganism& child, NetworkOrganism& p1, Netw
 void NetworkEvolver::MutateAdd(NetworkOrganism& org)
 {
 	uint32_t randomGeneIndex = random.Chance() * org.network.geneCount;
-	org.network.genes[randomGeneIndex] = std::clamp(org.network.genes[randomGeneIndex] + random.Normal(), -1.0f, 1.0f);
+	org.network.genes[randomGeneIndex] = std::clamp(org.network.genes[randomGeneIndex] + mutationScale * random.Normal(), -1.0f, 1.0f);
 }
 
 void NetworkEvolver::MutateSet(NetworkOrganism& org)
 {
-	uint32_t randomGeneIndex = random.Chance() * org.network.geneCount;
-	org.network.genes[randomGeneIndex] = random.Normal();
+	uint32_t randomGeneIndex = random.ChanceIndex(org.network.geneCount);
+	org.network.genes[randomGeneIndex] = random.Value();
 }
 
 void NetworkEvolver::RunEpisode()

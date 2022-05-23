@@ -153,6 +153,24 @@ Network& Network::operator=(Network&& other)
 	return *this;
 }
 
+Network Network::CloneNetworkLayout()
+{
+	Network network;
+	network.layerCount = layerCount;
+	network.activationsTranslation = activationsTranslation;
+	network.inputCount = inputCount;
+	network.geneCount = geneCount;
+	network.initialized = initialized;
+
+	network.layers = (Network::Layer*)malloc(sizeof(Network::Layer) * layerCount);
+	if (!network.layers)
+		throw std::runtime_error("Failed to allocate data for layer");
+	memcpy(network.layers, layers, sizeof(Network::Layer) * layerCount);
+	network.activations = new float[activationsTranslation * 2];
+	network.genes = new float[geneCount];
+	return network;
+}
+
 float const* Network::Evaluate(float* input, uint32_t inputCount)
 {
 #ifdef _DEBUG

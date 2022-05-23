@@ -1,7 +1,37 @@
 #pragma once
-//network evolver using the NEAT algorithm
-//this one is way cooler then the other one
 class NEATNetworkEvolver
 {
+
+
+
+
+
+
+	struct Genome
+	{
+		enum class NodeType 
+		{
+			SENSOR,
+			OUTPUT,
+			HIDDEN
+		};
+
+		struct Node 
+		{
+			float data;
+			NodeType type;
+		};
+
+		struct Connection
+		{
+			unsigned short in;
+			unsigned short out;
+			float weight;
+			bool enabled;
+			unsigned short innov;
+		};
+
+		
+	};
 };
 
