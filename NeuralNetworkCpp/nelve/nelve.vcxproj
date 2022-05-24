@@ -148,18 +148,19 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="EvolverBuilder.h" />
+    <ClInclude Include="EvolverEnums.h" />
     <ClInclude Include="NEATNetworkEvolver.h" />
     <ClInclude Include="NetworkOrganism.h" />
     <ClInclude Include="Maths.h" />
     <ClInclude Include="Network.h" />
     <ClInclude Include="NetworkEvolver.h" />
-    <ClInclude Include="NetworkLayer.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="EvolverBuilder.cpp" />
     <ClCompile Include="NEATNetworkEvolver.cpp" />
     <ClCompile Include="Network.cpp" />
     <ClCompile Include="NetworkEvolver.cpp" />
-    <ClCompile Include="NetworkLayer.cpp" />
     <ClCompile Include="NetworkOrganism.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

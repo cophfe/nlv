@@ -1,11 +1,11 @@
 #include "NetworkEvolver.h"
 
-NetworkEvolver::NetworkEvolver(const NetworkEvolverDefinition& def)
+NetworkEvolver::NetworkEvolver(const EvolverBuilder& def)
 	: population(def.generationSize), maxSteps(def.maxSteps), elitePercent(def.elitePercent),
 	mutationRate(def.mutationRate), stepCallback(def.stepFunction), startCallback(def.startFunction), endCallback(def.endFunction),
 	mutationType(def.mutationType), selectionType(def.selectionType), crossoverType(def.crossoverType), currentGeneration(0),
 	threadedStepping(def.threadedEpisodes), episodeThreadCount(def.episodeThreadCount), staticEpisodes(def.staticEpisodes),
-	mutationScale(def.mutationScale)
+	mutationScale(def.mutationScale), userPointer(def.userPtr)
 {
 	if (population == 0)
 		throw std::runtime_error("Generation size cannot be 0");
@@ -21,7 +21,7 @@ NetworkEvolver::NetworkEvolver(const NetworkEvolverDefinition& def)
 	organisms = (NetworkOrganism*)(malloc(sizeof(NetworkOrganism) * population));
 
 	if (def.tournamentSize == 0)
-		tournamentSize = std::min(population / 5, 3U);
+		tournamentSize = std::clamp(population / 50, 3U, 20U);
 	else //tournamentSize cannot be less than three
 		tournamentSize = std::min(def.tournamentSize, 3U);
 
@@ -489,13 +489,13 @@ void NetworkEvolver::RunEpisodePerThread(NetworkEvolver* obj, uint32_t startInde
 
 void NetworkEvolver::EvaluateGeneration()
 {
+	CreateNewGen();
 	if (startCallback)
 		startCallback(*this, organisms);
-	CreateNewGen();
 	RunEpisode();
-	currentGeneration++;
 	if (endCallback)
 		endCallback(*this, organisms);
+	currentGeneration++;
 
 }
 

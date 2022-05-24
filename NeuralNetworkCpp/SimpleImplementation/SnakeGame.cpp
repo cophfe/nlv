@@ -12,8 +12,8 @@ void SnakeGame::Run()
 {
 	//best i have had so far is 1 hidden layer with 6 neurons
 	Network network = Network(4, { 6 }, 3);
-	NetworkEvolverDefinition def(network, POPULATION_SIZE, MAX_STEPS, 0.02f, 0.2f, StepFunction, EvolverMutationType::Set, EvolverCrossoverType::Uniform, 
-		EvolverSelectionType::Ranked, OnStartGeneration, nullptr, true, false, time(0), 30);
+	NetworkEvolverDefinition def(network, POPULATION_SIZE, MAX_STEPS, 0.02f, 0.6f, StepFunction, EvolverMutationType::Set, EvolverCrossoverType::Point, 
+		EvolverSelectionType::Ranked, OnStartGeneration, nullptr, true, true, time(0), 1, 15, 10);
 	NetworkEvolver evolver(def);
 	evolver.SetUserPointer(this);
 	SetupStartSystem();
@@ -364,10 +364,10 @@ Coord SnakeGame::AddDirectionToCoord(Coord coord, Direction direction)
 void SnakeGame::SetupStartSystem()
 {
 	//the same every time:
-	//static int seed = random();
-	//startSystem.random.seed(seed);
+	static int seed = random();
+	startSystem.random.seed(seed);
 	//not the same every time
-	startSystem.random.seed(random());
+	//startSystem.random.seed(random());
 
 	startSystem.body.clear();
 	startSystem.movementDirection = Direction::DOWN;
@@ -381,9 +381,9 @@ void SnakeGame::SetupStartSystem()
 	do {
 		appleIntersecting = false;
 		//the same every time:
-		//startSystem.appleCoord = Coord{ 0, 4 };
+		startSystem.appleCoord = Coord{ 4, 4 };
 		//not the same every time
-		startSystem.appleCoord = Coord{ dist(random), dist(random) };
+		//startSystem.appleCoord = Coord{ dist(random), dist(random) };
 		for (Coord pos : startSystem.body)
 			appleIntersecting |= pos == startSystem.appleCoord;
 	} while (appleIntersecting);

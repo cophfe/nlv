@@ -1,8 +1,9 @@
 #include "NetworkOrganism.h"
 
 NetworkOrganism::NetworkOrganism(Network& networkToCopy)
-	: network(Network(networkToCopy)), fitness(0), continueStepping(true), steps(0), networkInputs(new float[network.GetInputCount()])
+	: network(Network(networkToCopy)), fitness(0), continueStepping(true), steps(0)
 {
+	networkInputs = new float[network.GetInputCount()];
 }
 
 NetworkOrganism::~NetworkOrganism()

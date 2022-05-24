@@ -3,7 +3,7 @@ C:\Users\s210575\Documents\ConnorFettes\Complex Systems\ComplexGameSystems\Neura
 C:\Users\s210575\Documents\ConnorFettes\Complex Systems\ComplexGameSystems\NeuralNetworkCpp\nelve\NetworkEvolver.h(188,64): warning C4244: 'return': conversion from 'float' to 'uint32_t', possible loss of data
 C:\Users\s210575\Documents\ConnorFettes\Complex Systems\ComplexGameSystems\NeuralNetworkCpp\SimpleImplementation\Button.h(73,32): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
 C:\Users\s210575\Documents\ConnorFettes\Complex Systems\ComplexGameSystems\NeuralNetworkCpp\SimpleImplementation\SnakeGame.cpp(7,18): warning C4244: 'argument': conversion from 'time_t' to 'unsigned int', possible loss of data
-C:\Users\s210575\Documents\ConnorFettes\Complex Systems\ComplexGameSystems\NeuralNetworkCpp\SimpleImplementation\SnakeGame.cpp(16,78): warning C4244: 'argument': conversion from 'time_t' to 'uint32_t', possible loss of data
+C:\Users\s210575\Documents\ConnorFettes\Complex Systems\ComplexGameSystems\NeuralNetworkCpp\SimpleImplementation\SnakeGame.cpp(16,77): warning C4244: 'argument': conversion from 'time_t' to 'uint32_t', possible loss of data
 C:\Users\s210575\Documents\ConnorFettes\Complex Systems\ComplexGameSystems\NeuralNetworkCpp\SimpleImplementation\SnakeGame.cpp(42,20): warning C4018: '<': signed/unsigned mismatch
 C:\Users\s210575\Documents\ConnorFettes\Complex Systems\ComplexGameSystems\NeuralNetworkCpp\SimpleImplementation\SnakeGame.cpp(106,22): warning C4018: '<': signed/unsigned mismatch
 C:\Users\s210575\Documents\ConnorFettes\Complex Systems\ComplexGameSystems\NeuralNetworkCpp\SimpleImplementation\SnakeGame.cpp(230,43): warning C4838: conversion from 'int' to 'float' requires a narrowing conversion
@@ -48,13 +48,6 @@ C:\Users\s210575\Documents\ConnorFettes\Complex Systems\ComplexGameSystems\Neura
 C:\Users\s210575\Documents\ConnorFettes\Complex Systems\ComplexGameSystems\NeuralNetworkCpp\SimpleImplementation\SnakeGame.cpp(441,23): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
 C:\Users\s210575\Documents\ConnorFettes\Complex Systems\ComplexGameSystems\NeuralNetworkCpp\SimpleImplementation\SnakeGame.cpp(442,50): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
 C:\Users\s210575\Documents\ConnorFettes\Complex Systems\ComplexGameSystems\NeuralNetworkCpp\SimpleImplementation\SnakeGame.cpp(442,25): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
-  Source.cpp
-C:\Users\s210575\Documents\ConnorFettes\Complex Systems\ComplexGameSystems\NeuralNetworkCpp\nelve\NetworkEvolver.h(131,31): warning C4114: same type qualifier used more than once
-C:\Users\s210575\Documents\ConnorFettes\Complex Systems\ComplexGameSystems\NeuralNetworkCpp\nelve\NetworkEvolver.h(188,64): warning C4244: 'return': conversion from 'float' to 'uint32_t', possible loss of data
-C:\Users\s210575\Documents\ConnorFettes\Complex Systems\ComplexGameSystems\NeuralNetworkCpp\SimpleImplementation\Button.h(73,32): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
-C:\Users\s210575\Documents\ConnorFettes\Complex Systems\ComplexGameSystems\NeuralNetworkCpp\SimpleImplementation\Source.cpp(6,1): warning C4326: return type of 'main' should be 'int' instead of 'void'
-  Generating Code...
 C:\Users\s210575\Documents\ConnorFettes\Complex Systems\ComplexGameSystems\NeuralNetworkCpp\SimpleImplementation\Button.h(25): warning C4172: returning address of local variable or temporary
 C:\Users\s210575\Documents\ConnorFettes\Complex Systems\ComplexGameSystems\NeuralNetworkCpp\SimpleImplementation\Button.h(22): warning C4172: returning address of local variable or temporary
-LINK : warning LNK4098: defaultlib 'MSVCRT' conflicts with use of other libs; use /NODEFAULTLIB:library
   SimpleImplementation.vcxproj -> C:\Users\s210575\Documents\ConnorFettes\Complex Systems\ComplexGameSystems\NeuralNetworkCpp\x64\Debug\SimpleImplementation.exe

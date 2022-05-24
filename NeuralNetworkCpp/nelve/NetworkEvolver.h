@@ -6,110 +6,19 @@
 #include <iostream>
 #include <random>
 #include <algorithm>
-
-typedef void(*EvolverStepCallback)(const NetworkEvolver& evolver, NetworkOrganism& organism, int organismIndex);
-typedef void(*EvolverGenerationCallback)(const NetworkEvolver& evolver, NetworkOrganism* organisms);
-typedef void(*EvolverCustomCrossoverCallback)(float* childGenes, const NetworkOrganism& p1, const NetworkOrganism& p2, float* p1Genes, float* p2Genes);
-typedef void(*EvolverCustomMutationCallback)(float* genes, const NetworkOrganism& organism);
-typedef NetworkOrganism* (*EvolverCustomSelectionCallback)(NetworkOrganism* organisms, NetworkOrganism*& selectedOrganism);
-
-// Note: in this class a gene is considered to be a weight or a bias in a neural network
-// When a gene is mutated, this decides how exactly that will take place
-enum class EvolverMutationType : char
-{
-	// The gene is set to a random value between -1 and 1
-	Set,
-	// The gene has a random value from a normal distribution added to it (mean 0, standard deviation 1, clamped between -1 and 1)
-	Add,
-	// Calls a custom mutation function
-	Custom
-};
-
-// How the parents used for crossover are selected
-enum class EvolverSelectionType : char
-{
-	// Parents are selected based on the percentage of total fitness they have
-	FitnessProportional,
-	// Parents are selected based on their fitness rank
-	Ranked,
-	// A tournament is performed on the population based on fitness, the winners are selected. 
-	Tournament,
-	// A selection type that tries to avoid premature convergance by adapting based on fitness range
-	//Boltzman,
-	// Calls a custom selection function
-	Custom
-};
-
-// How two parents from the previous generation are crossed over to create a child network
-enum class EvolverCrossoverType : char
-{
-	// Chooses which parent a gene is taken from with a 50% chance for either parent
-	Uniform,
-	// chooses a random point on the genome. one side's genes will be taken from p1, the other p2
-	Point,
-	// chooses 2 random points on the genome. The inbetween genes will be taken from p2, the other genes will be taken from p1
-	TwoPoint,
-	// Linearly combines the genes from the two parent genomes
-	Arithmetic,
-	// Linearly combines the genes from the two parent genomes, interpolated based on the proportion of fitness values between them
-	// if either of the fitness values are negative, this will revert to regular arithmetic crossover.
-	ArithmeticProportional,
-	// Calls a custom crossover function
-	Custom
-};
-
-struct NetworkEvolverDefinition
-{
-public:
-	NetworkEvolverDefinition() = default;
-	NetworkEvolverDefinition(Network& networkTemplate, uint32_t generationSize, uint32_t maxSteps,
-		float elitePercent, float mutationRate, EvolverStepCallback stepFunction, 
-		EvolverMutationType mutationType = EvolverMutationType::Set, 
-		EvolverCrossoverType crossoverType = EvolverCrossoverType::Uniform,
-		EvolverSelectionType selectionType = EvolverSelectionType::Ranked, EvolverGenerationCallback startFunction = nullptr,
-		EvolverGenerationCallback endFunction = nullptr, bool threadedStepping = false, bool staticEpisodes = false, uint32_t seed = 0, 
-		float mutationScale = 1.0f, uint32_t episodeThreadCount = 5, uint32_t tournamentSize = 0,
-		EvolverCustomSelectionCallback selectionCallback = nullptr, EvolverCustomCrossoverCallback crossoverCallback = nullptr,
-		EvolverCustomMutationCallback mutationCallback = nullptr)
-		: networkTemplate(networkTemplate), generationSize(generationSize), maxSteps(maxSteps), elitePercent(elitePercent),
-		mutationRate(mutationRate), stepFunction(stepFunction), startFunction(startFunction), endFunction(endFunction),
-		mutationType(mutationType), crossoverType(crossoverType), selectionType(selectionType), seed(seed),
-		threadedEpisodes(threadedStepping), staticEpisodes(staticEpisodes), episodeThreadCount(episodeThreadCount), 
-		tournamentSize(tournamentSize), mutationScale(mutationScale), selectionCallback(selectionCallback),
-		crossoverCallback(crossoverCallback), mutationCallback(mutationCallback)
-	{}
-
-	Network& networkTemplate;
-	EvolverStepCallback stepFunction;
-	EvolverGenerationCallback startFunction;
-	EvolverGenerationCallback endFunction;
-	EvolverCustomSelectionCallback selectionCallback; //for selectiontype::custom
-	EvolverCustomCrossoverCallback crossoverCallback; //for crossovertype::custom
-	EvolverCustomMutationCallback mutationCallback; //for mutationtype::custom
-	uint32_t generationSize;
-	uint32_t maxSteps;
-	uint32_t seed;
-	float elitePercent;
-	float mutationRate;
-	float mutationScale; //for mutationtype::add
-	uint32_t episodeThreadCount; //for threadedEpisodes == true
-	uint32_t tournamentSize; //for selectiontype::tournament
-	EvolverMutationType mutationType;
-	EvolverCrossoverType crossoverType;
-	EvolverSelectionType selectionType;
-	bool threadedEpisodes;
-	bool staticEpisodes;
-};
-
+#include "EvolverEnums.h"
+#include "EvolverBuilder.h"
 
 //This evolver works best with problems that can be answered using a markov chain
 //if a descision can not be made exclusively using the previous state, it will probably not work great
 //if the user inputs data from previous states into the network, this isn't necessarily true 
 class NetworkEvolver
 {
-public:
+private:
+	friend EvolverBuilder;
 	// Create network evolver from a network evolver definition
-	NetworkEvolver(const NetworkEvolverDefinition& def);
+	NetworkEvolver(const EvolverBuilder& def);
+public:
 	~NetworkEvolver();
 	//yes I am lazy, im so happy you noticed <3
 	NetworkEvolver(const NetworkEvolver& other) = delete;

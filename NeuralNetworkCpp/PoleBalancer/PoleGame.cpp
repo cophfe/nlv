@@ -2,10 +2,11 @@
 
 void PoleGame::Run()
 {
-	Network network(4, { 2 }, 1);
-	NetworkEvolverDefinition def(network, POPULATION_SIZE, MAX_STEPS, 0.02f, 0.1f, StepFunction, EvolverMutationType::Add, EvolverCrossoverType::Point,
-		EvolverSelectionType::Ranked, OnStartGeneration, nullptr, false, false, time(0), 30);
+	Network network(INPUT_COUNT, { 1 }, 1);
+	NetworkEvolverDefinition def(network, POPULATION_SIZE, MAX_STEPS, 0.02f, 0.6f, StepFunction, EvolverMutationType::Set, EvolverCrossoverType::TwoPoint,
+		EvolverSelectionType::FitnessProportional, OnStartGeneration, nullptr, false, false, time(0), 30);
 	NetworkEvolver evolver = NetworkEvolver(def);
+	SetupStartSystem();
 	evolver.SetUserPointer(this);
 	evolver.EvaluateGeneration();
 
@@ -14,7 +15,6 @@ void PoleGame::Run()
 	Button runBest(Coord(730, 50), Coord(250, 50), RED, MAROON, WHITE, 30, 10, "Run Best", nullptr);
 	Button runRand(Coord(730, 120), Coord(250, 50), RED, MAROON, WHITE, 30, 10, "Run Random", nullptr);
 
-	SetupStartSystem();
 
 	struct {
 		Network network;
@@ -23,7 +23,7 @@ void PoleGame::Run()
 		float continueTimer = 0;
 		unsigned int steps = 0;
 		unsigned int orgIndex = 0;
-		float inputs[4];
+		float inputs[INPUT_COUNT];
 		bool running = false;
 		
 	} testOrganism;
@@ -32,14 +32,17 @@ void PoleGame::Run()
 	float highestFitness = -10000000000000000000.0f;
 	float averageFitness = 0;
 	float lowestFitness = 10000000000000000000.0f;
-	const NetworkOrganism* organisms = evolver.GetOrganisms();
-	for (int i = 0; i < evolver.GetPopulation(); i++)
 	{
-		averageFitness += organisms[i].fitness;
-		lowestFitness = std::min(organisms[i].fitness, lowestFitness);
-		highestFitness = std::max(organisms[i].fitness, highestFitness);
+		const NetworkOrganism* organisms = evolver.GetOrganisms();
+		for (int i = 0; i < evolver.GetPopulation(); i++)
+		{
+			averageFitness += organisms[i].fitness;
+			lowestFitness = std::min(organisms[i].fitness, lowestFitness);
+			highestFitness = std::max(organisms[i].fitness, highestFitness);
+		}
+		averageFitness /= evolver.GetPopulation();
 	}
-	averageFitness /= evolver.GetPopulation();
+	
 	bool lappingGenerations = false;
 
 	while (!WindowShouldClose())
@@ -88,7 +91,7 @@ void PoleGame::Run()
 			EndDrawing();
 			evolver.EvaluateGeneration();
 			testOrganism.system = templateSystem;
-			organisms = evolver.GetOrganisms();
+			const NetworkOrganism* organisms = evolver.GetOrganisms();
 			highestFitness = -10000000000000000000.0f;
 			averageFitness = 0;
 			lowestFitness = 10000000000000000000.0f;
@@ -104,7 +107,7 @@ void PoleGame::Run()
 		if (runBest.Pressed())
 		{
 			//clone network from best organism
-			auto* organisms = evolver.GetOrganisms();
+			const NetworkOrganism* organisms = evolver.GetOrganisms();
 			float fitness = organisms[0].fitness;
 			testOrganism.orgIndex = 0;
 			for (size_t i = 1; i < evolver.GetPopulation(); i++)
@@ -115,7 +118,7 @@ void PoleGame::Run()
 					testOrganism.orgIndex = i;
 				}
 			}
-			testOrganism.network = evolver.GetOrganisms()[testOrganism.orgIndex].GetNetwork();
+			testOrganism.network = organisms[testOrganism.orgIndex].GetNetwork();
 			//set snake values to the same as the initial values for this generation
 			testOrganism.system = templateSystem;
 			testOrganism.fitness = 0;
@@ -132,6 +135,7 @@ void PoleGame::Run()
 			testOrganism.system = templateSystem;
 			testOrganism.steps = 0;
 			testOrganism.fitness = 0;
+			testOrganism.continueTimer = 0;
 			testOrganism.running = true;
 			SetNetworkInputs(testOrganism.system, testOrganism.inputs);
 		}
@@ -143,11 +147,11 @@ void PoleGame::Run()
 				|| (IsKeyDown(KEY_LEFT_CONTROL) && testOrganism.continueTimer >= TIME_STEP / 4)
 				|| (IsKeyDown(KEY_LEFT_ALT)))
 			{
-				if (testOrganism.steps > MAX_STEPS)
+				if (testOrganism.steps >= MAX_STEPS)
 					testOrganism.running = false;
 
 				testOrganism.continueTimer = 0;
-				testOrganism.network.Evaluate(testOrganism.inputs, 4);
+				testOrganism.network.Evaluate(testOrganism.inputs, INPUT_COUNT);
 				StepOrganism(testOrganism.system, *testOrganism.network.GetPreviousActivations(), testOrganism.fitness, testOrganism.running);
 				SetNetworkInputs(testOrganism.system, testOrganism.inputs);
 				testOrganism.steps++;
@@ -194,27 +198,34 @@ void PoleGame::StepFunction(const NetworkEvolver& evolver, NetworkOrganism& orga
 {
 	PoleGame* ptr = (PoleGame*)evolver.GetUserPointer();
 	ptr->StepOrganism(ptr->systems[organismIndex], *organism.GetNetworkOutputActivations(), organism.fitness, organism.continueStepping);
+	SetNetworkInputs(ptr->systems[organismIndex], organism.GetNetworkInputArray());
 }
 
 void PoleGame::SetNetworkInputs(PoleSystem& system, float* inputs)
 {
+	//inputs[0] = system.time;
 	inputs[0] = system.cartPosition;
-	inputs[1] = system.cartVelocity;
-	inputs[2] = system.poleAngle;
-	inputs[3] = system.poleVelocity;
+	inputs[1] = system.poleAngle;
+	inputs[2] = system.pole2Angle;
+	inputs[3] = system.cartVelocity;
+	inputs[4] = system.poleVelocity;
+	inputs[5] = system.pole2Velocity;
 }
 
 void PoleGame::StepOrganism(PoleSystem& system, float networkOutput, float& fitness, bool& continueStepping)
 {
-	//fitness is time
-	fitness += TIME_STEP;
-	
+	//fitness += TIME_STEP; //fitness == time
+	//fitness += (POLE_FAILURE_ANGLE - glm::abs( system.poleAngle); //just to remove the spice, the less wobbly the sticks the better
+	fitness += glm::abs(system.poleAngle) + glm::abs(system.pole2Angle); //just to add more spice, the wobblier the sticks the better
+	//fitness += glm::abs(system.pole2Angle - system.poleAngle); //the further apart the sticks, the more points
 	float force = glm::sign(networkOutput - 0.5f) * FORCE;
 
 	system.cartPosition += TIME_STEP * system.cartVelocity;
 	system.cartVelocity += TIME_STEP * system.cartAcceleration;
 	system.poleAngle += TIME_STEP * system.poleVelocity;
+	system.pole2Angle += TIME_STEP * system.pole2Velocity;
 	system.poleVelocity += TIME_STEP * system.poleAcceleration;
+	system.pole2Velocity += TIME_STEP * system.pole2Acceleration;
 	
 	float iMass = 1.0f / (CART_MASS + POLE_MASS);
 	float cosAngle = glm::cos(system.poleAngle);
@@ -225,8 +236,11 @@ void PoleGame::StepOrganism(PoleSystem& system, float networkOutput, float& fitn
 	system.poleAcceleration = GRAVITY * sinAngle + cosAngle *
 		(-force - POLE_MASS * POLE_LENGTH * system.poleVelocity * system.poleVelocity * sinAngle * iMass);
 	system.poleAcceleration /= POLE_LENGTH * (4.0f / 3.0f - POLE_MASS * cosAngle * cosAngle * iMass);
+	system.pole2Acceleration = GRAVITY * sinAngle + cosAngle *
+		(-force - POLE_2_MASS * POLE_2_LENGTH * system.pole2Velocity * system.pole2Velocity * sinAngle * iMass);
+	system.pole2Acceleration /= POLE_2_LENGTH * (4.0f / 3.0f - POLE_2_MASS * cosAngle * cosAngle * iMass);
 
-	if (glm::abs(system.poleAngle) >= POLE_FAILURE_ANGLE
+	if (glm::abs(system.poleAngle) >= POLE_FAILURE_ANGLE || glm::abs(system.pole2Angle) >= POLE_FAILURE_ANGLE
 		|| glm::abs(system.cartPosition) >= TRACK_LIMIT)
 	{
 		continueStepping = false;
@@ -239,8 +253,14 @@ void PoleGame::SetupStartSystem()
 	templateSystem.cartAcceleration = 0;
 	templateSystem.poleVelocity = 0;
 	templateSystem.poleAcceleration = 0;
-	templateSystem.poleAngle = 0;// dist(random);
-	templateSystem.cartPosition = 0;// dist(random);
+	templateSystem.pole2Velocity = 0;
+	templateSystem.pole2Acceleration = 0;
+	//templateSystem.poleAngle = 0;
+	//templateSystem.pole2Angle = 0;
+	//templateSystem.cartPosition = 0;
+	templateSystem.poleAngle = dist(random);
+	templateSystem.pole2Angle = dist(random);
+	templateSystem.cartPosition = dist(random);
 }
 
 void PoleGame::DrawGame(PoleSystem& system, short x, short y, short sizeX, short sizeY, short floorSize)
@@ -253,14 +273,29 @@ void PoleGame::DrawGame(PoleSystem& system, short x, short y, short sizeX, short
 	y += borderSize;
 	DrawRectangle(x, y, sizeX, sizeY, BLACK);
 
-	float unit = (float)sizeX / (TRACK_LIMIT * 2.0f + 1);
+	float unit = (float)sizeX / (TRACK_LIMIT * 2.0f + 2);
 	short cartSizeY = unit * 0.5f;
 	//floor
 	DrawRectangle(x, y + sizeY - floorSize, sizeX, floorSize, GRAY);
 	//cart
 	Vec2 cartStart = Vec2(x + sizeX / 2 - cartSizeY + unit * system.cartPosition, y + sizeY - floorSize - cartSizeY);
-	DrawRectangle(cartStart.x, cartStart.y, cartSizeY * 2, cartSizeY, RED);
+	DrawRectangle(cartStart.x, cartStart.y, cartSizeY * 2, cartSizeY, SKYBLUE);
 	Vec2 start = Vec2(cartStart.x + cartSizeY, cartStart.y);
 	Vec2 offset =  (POLE_LENGTH * 2.0f * unit) * Vec2(glm::sin(system.poleAngle), glm::cos(system.poleAngle));
 	DrawLine(start.x, start.y, start.x + offset.x, start.y - offset.y, WHITE);
+	Vec2 offset2 =  (POLE_2_LENGTH * 2.0f * unit) * Vec2(glm::sin(system.pole2Angle), glm::cos(system.pole2Angle));
+	DrawLine(start.x, start.y, start.x + offset2.x, start.y - offset2.y, LIGHTGRAY);
+
+	//cart size y is also half of cartsize 2
+	float limit = cartSizeY;
+	DrawLine(x + limit, y + sizeY - floorSize, x + limit, y, RED);
+	DrawLine(x + (sizeX - limit), y + sizeY - floorSize, x + (sizeX - limit), y, RED);
+
+	static const float failCos = glm::cos(POLE_FAILURE_ANGLE);
+	static const float failSin = glm::sin(POLE_FAILURE_ANGLE);
+	Vec2 failOffset = (POLE_LENGTH * 2.0f * unit) * Vec2(failSin, failCos);
+	DrawLine(start.x, start.y, start.x + failOffset.x, start.y - failOffset.y, RED);
+	DrawLine(start.x, start.y, start.x - failOffset.x, start.y - failOffset.y, RED);
+	
+
 }

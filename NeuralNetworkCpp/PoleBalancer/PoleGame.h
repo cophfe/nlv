@@ -16,11 +16,15 @@
 
 typedef glm::vec2 Vec2;
 constexpr int POPULATION_SIZE = 1000;
+constexpr int INPUT_COUNT = 6;
+
 constexpr float FORCE = 10;
 constexpr float GRAVITY = -9.81f;
 constexpr float POLE_MASS = 0.1f;
+constexpr float POLE_2_MASS = 0.2f;
 constexpr float CART_MASS = 1.0f;
 constexpr float POLE_LENGTH = 0.5f;
+constexpr float POLE_2_LENGTH = 0.7f;
 constexpr float TRACK_LIMIT = 2.4f;
 constexpr float POLE_FAILURE_ANGLE = 0.209f; // degrees: 12.0f;
 constexpr float TIME_STEP = 1.0f / 50.0f;
@@ -32,6 +36,9 @@ struct PoleSystem
 	float poleAngle;
 	float poleVelocity;
 	float poleAcceleration;
+	float pole2Angle;
+	float pole2Velocity;
+	float pole2Acceleration;
 	float cartPosition;
 	float cartVelocity;
 	float cartAcceleration;

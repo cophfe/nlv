@@ -1,13 +1,17 @@
 #pragma once
-class NEATNetworkEvolver
+#include <cstdint>
+#include "Maths.h"
+#include <vector>
+
+class NetworkEvolverNEAT
 {
+public:
+	NetworkEvolverNEAT(uint32_t inputCount, uint32_t outputCount);
 
+private:
 
-
-
-
-
-	struct Genome
+	//NetworkNEAT is the genome
+	struct NetworkNEAT
 	{
 		enum class NodeType 
 		{
@@ -24,14 +28,24 @@ class NEATNetworkEvolver
 
 		struct Connection
 		{
-			unsigned short in;
-			unsigned short out;
+			//weight of connection
 			float weight;
+			//in node
+			unsigned short in;
+			//out node
+			unsigned short out;
+			//innovation number
+			unsigned short innovation;
+			//whether enabled or disables
 			bool enabled;
-			unsigned short innov;
 		};
 
-		
+		std::vector<Node> sensorNodes;
+		std::vector<Node> outputNodes;
+		std::vector<Node> hiddenNodes;
+		std::vector<Connection> connections;
+
+		void Mutate();
 	};
 };
 
