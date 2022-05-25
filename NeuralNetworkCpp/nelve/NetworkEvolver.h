@@ -14,59 +14,69 @@
 //if the user inputs data from previous states into the network, this isn't necessarily true 
 class NetworkEvolver
 {
-private:
-	friend EvolverBuilder;
+public:
+	//this will not fully initiate the network evolver
+	NetworkEvolver() = default;
 	// Create network evolver from a network evolver definition
 	NetworkEvolver(const EvolverBuilder& def);
-public:
+	// Destructor
 	~NetworkEvolver();
-	//yes I am lazy, im so happy you noticed <3
+	// Move constructor
+	NetworkEvolver(NetworkEvolver&& other);
+	// Move assignment
+	NetworkEvolver& operator=(NetworkEvolver&& other);
+	// Copy constructor and assignment are unnesesary, right??
 	NetworkEvolver(const NetworkEvolver& other) = delete;
 	NetworkEvolver& operator=(const NetworkEvolver& other) = delete;
 	// Load data
-	//////////////////////////////////////static NetworkEvolver LoadFromFile(std::string file);
-	//////////////////////////////////////static std::string LoadToString(std::string file);
+	static NetworkEvolver LoadFromFile(std::string file);
+	static std::string LoadFromString(std::string string);
 	// Save data
-	//////////////////////////////////////void SaveToFile(std::string file);
-	//////////////////////////////////////std::string SaveToString();
+	void SaveToFile(std::string file);
+	std::string SaveToString();
 	// Create the new generation and run an episode to determine fitness values
 	void EvaluateGeneration();
 	void EvaluateGenerations(uint32_t count);
-	// Finds the best performing organism in the last generation
-	const NetworkOrganism& FindBestOrganism() const;
-	// Calculates the range of fitnesses in the last generation
-	float FindFitnessRange() const;
-	// Returns the array containing the last generation of organisms
-	inline const NetworkOrganism const* GetOrganisms() const { return organisms; }
-	inline uint32_t GetGeneration() const { return currentGeneration; }
-	// Get the amount of organisms in a generation
-	inline uint32_t GetPopulation() const { return population; }
-	// Return the user defined pointer
-	inline void* GetUserPointer() const { return userPointer; }
-	// Returns if stepping is threaded or not
-	inline bool GetThreadedStepping() { return threadedStepping; }
-	inline EvolverStepCallback GetStepCallback() { return stepCallback; }
-	inline EvolverGenerationCallback GetStartCallback() { return startCallback; }
-	inline EvolverGenerationCallback GetEndCallback() { return endCallback; }
-	inline EvolverCrossoverType GetCrossoverType() { return crossoverType; }
-	inline EvolverMutationType GetMutationType() { return mutationType; }
-	inline EvolverSelectionType GetSelectionType() { return selectionType; }
-	inline bool GetStaticEpisodes() { return staticEpisodes; }
-	inline uint32_t GetTournamentSize() { return tournamentSize; }
 
-	inline void SetUserPointer(void* ptr) { userPointer = ptr; }
-	inline void SetMutationRate(float rate) { mutationRate = rate; }
-	inline void SetElitePercent(float percent) { elitePercent = percent; }
-	inline void SetMaxSteps(uint32_t max) { maxSteps = max; }
-	inline void SetThreadedStepping(bool threaded) { threadedStepping = threaded; }
-	inline void SetStepCallback (EvolverStepCallback callback) { stepCallback = callback; }
-	inline void SetStartCallback (EvolverGenerationCallback callback) { startCallback = callback; }
-	inline void SetEndCallback (EvolverGenerationCallback callback) { endCallback = callback; }
-	inline void SetCrossoverType (EvolverCrossoverType type) { crossoverType = type; }
-	inline void SetMutationType (EvolverMutationType type) { mutationType = type; }
-	inline void SetSelectionType (EvolverSelectionType type) { selectionType = type; }
-	inline void SetStaticEpisodes (bool staticEpisodes) { this->staticEpisodes = staticEpisodes; }
-	inline void SetTournamentSize(uint32_t size) { tournamentSize = std::max(3U, size); }
+	const NetworkOrganism& FindBestOrganism() const;
+	float FindFitnessRange() const;
+	
+	//Getters
+	inline const NetworkOrganism const* GetPopulationArray() const		{ return organisms; }
+	inline uint32_t GetGeneration() const								{ return currentGeneration; }
+	inline uint32_t GetPopulationSize() const							{ return populationSize; }
+	inline bool GetIfThreadedEpisodes() const							{ return threadedStepping; }
+	inline bool GetStaticEpisodes() const								{ return staticEpisodes; }
+	inline bool GetIsInitiated() const									{ return initiated; }
+	inline float GetMutationScale() const								{ return mutationScale; }
+	inline float GetElitePercent() const								{ return elitePercent; }
+	inline float GetMutationRate() const								{ return mutationRate; }
+	inline uint32_t GetMaxSteps() const									{ return maxSteps; }
+	inline uint32_t GetTournamentSize() const							{ return tournamentSize; }
+	inline uint32_t GetEpisodeThreadCount() const						{ return episodeThreadCount; }
+	inline EvolverStepCallback GetStepCallback() const					{ return stepCallback; }
+	inline EvolverGenerationCallback GetStartCallback() const			{ return startCallback; }
+	inline EvolverGenerationCallback GetEndCallback() const				{ return endCallback; }
+	inline EvolverCrossoverType GetCrossoverType() const				{ return crossoverType; }
+	inline EvolverMutationType GetMutationType() const					{ return mutationType; }
+	inline EvolverSelectionType GetSelectionType() const				{ return selectionType; }
+	inline void* GetUserPointer() const									{ return userPointer; }
+	//Setters
+	inline void SetIsThreadedEpisodes(bool threaded)					{ threadedStepping = threaded; }
+	void SetStaticEpisodes(bool staticEpisodes);
+	inline void SetMutationRate(float rate)								{ mutationRate = std::clamp(rate, 0.0f, 1.0f); }
+	inline void SetMutationScale(float scale)							{ mutationScale = scale; }
+	inline void SetElitePercent(float percent)							{ elitePercent = std::clamp(percent, 0.0f, 1.0f); }
+	inline void SetMaxSteps(uint32_t max)								{ maxSteps = std::max(max, 1U); }
+	inline void SetTournamentSize(uint32_t size)						{ tournamentSize = std::max(3U, size); }
+	inline void SetEpisodeThreadCount(uint32_t count)					{ episodeThreadCount = std::max(1U, count); }
+	void SetStepCallback(EvolverStepCallback callback);
+	inline void SetStartCallback (EvolverGenerationCallback callback)	{ startCallback = callback; }
+	inline void SetEndCallback (EvolverGenerationCallback callback)		{ endCallback = callback; }
+	inline void SetCrossoverType (EvolverCrossoverType type)			{ crossoverType = type; }
+	inline void SetMutationType (EvolverMutationType type)				{ mutationType = type; }
+	inline void SetSelectionType (EvolverSelectionType type)			{ selectionType = type; }
+	inline void SetUserPointer(void* ptr)								{ userPointer = ptr; }
 
 private:
 	// Create the next generation based on values from the last generation
@@ -97,50 +107,56 @@ private:
 		inline uint32_t ChanceIndex(uint32_t size) { return Chance() * (size - 1); }
 	} random;
 	//litteraly an array of ints used to index into the organisms array
-	uint32_t* fitnessOrderedIndexes;
+	uint32_t* fitnessOrderedIndexes = nullptr;
 	// Called for each organism for every step. Allows the user to modify values used for the organism's next step
 	// Inside this callback no values accessed by other organisms should be modified.
-	EvolverStepCallback stepCallback;
+	EvolverStepCallback stepCallback = nullptr;
 	//Called once at the start of a generation. Allows the user to setup initial input values for the organism, as well as any variables used on the users side.
 	//Neither this or endCallback need to be set.
-	EvolverGenerationCallback startCallback;
+	EvolverGenerationCallback startCallback = nullptr;
 	//Called once at the end of a generation. For whatever the user needs.
-	EvolverGenerationCallback endCallback;
+	EvolverGenerationCallback endCallback = nullptr;
 	//Custom callbacks
-	EvolverCustomSelectionCallback selectionCallback;
-	EvolverCustomCrossoverCallback crossoverCallback;
-	EvolverCustomMutationCallback mutationCallback;
+	EvolverCustomSelectionCallback selectionCallback = nullptr;
+	EvolverCustomCrossoverCallback crossoverCallback = nullptr;
+	EvolverCustomMutationCallback mutationCallback = nullptr;
 	//User pointer, pointing to whatever they want it to point to
-	void* userPointer;
+	void* userPointer = nullptr;
 	// the organisms in the current generation. Not accessible outside of the evolver.
-	NetworkOrganism* organisms;
+	NetworkOrganism* organisms = nullptr;
 	// The number of organisms in a given generation
-	uint32_t population;
+	uint32_t populationSize = 0;
 	// The size of the neural networks' input and output arrays
-	uint32_t neuralInputSize, neuralOutputSize;
+	uint32_t neuralInputSize = 0, neuralOutputSize = 0;
 	// The percentage chance that a gene is mutated
-	float mutationRate;
+	float mutationRate = 0;
 	// The scale of change in a mutated gene when using MutationType::Add
-	float mutationScale;
+	float mutationScale = 0;
 	// The percentage of individuals from one generation who are directly cloned to the next generation
-	float elitePercent;
+	float elitePercent = 0;
 	// The maximum number of steps an organism can take
-	uint32_t maxSteps;
+	uint32_t maxSteps = 0;
 	// The current generation index
-	uint32_t currentGeneration;
+	uint32_t currentGeneration = 0;
 	//The type of mutation used
-	EvolverMutationType mutationType;
+	EvolverMutationType mutationType = EvolverMutationType::Add;
 	//The type of crossover used
-	EvolverCrossoverType crossoverType;
+	EvolverCrossoverType crossoverType = EvolverCrossoverType::Arithmetic;
 	//The type of selection used
-	EvolverSelectionType selectionType;
-	//Whether stepping through organisms is threaded or not.
-	bool threadedStepping;
+	EvolverSelectionType selectionType = EvolverSelectionType::FitnessProportional;
+	//Whether stepping through organisms is threaded or not
+	bool threadedStepping = false;
 	//Whether every episode is the same as the last
-	bool staticEpisodes;
+	bool staticEpisodes = false;
 	//The number of threads created
-	uint32_t episodeThreadCount;
+	uint32_t episodeThreadCount = 0;
 	//the size of the tournament if using tournament selection
-	uint32_t tournamentSize;
+	uint32_t tournamentSize = 0;
+
+	//if the evolver is initiated or not. if it has been destroyed or was not constructed correctly this may evaluate to false
+	bool initiated = false;
+
+	//for if static episodes is set to true after multiple generations have been run, to prevent issues
+	bool activateStaticEpisodes = false;
 };
 

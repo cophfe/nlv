@@ -1,8 +1,8 @@
 #include "EvolverBuilder.h"
 #include "NetworkEvolver.h"
 
-EvolverBuilder::EvolverBuilder(Network& networkTemplate, EvolverStepCallback stepFunction, uint32_t population, uint32_t maxSteps, uint32_t seed)
-	: seed(seed), networkTemplate(networkTemplate), stepFunction(stepFunction), generationSize(population), maxSteps(maxSteps)
+EvolverBuilder::EvolverBuilder(Network& networkTemplate, EvolverStepCallback stepFunction, uint32_t populationSize, uint32_t maxSteps, uint32_t seed)
+	: seed(seed), networkTemplate(networkTemplate), stepFunction(stepFunction), populationSize(populationSize), maxSteps(maxSteps)
 {}
 
 EvolverBuilder& EvolverBuilder::SetCallbacks(EvolverGenerationCallback startFunction, EvolverGenerationCallback endFunction)
@@ -14,7 +14,7 @@ EvolverBuilder& EvolverBuilder::SetCallbacks(EvolverGenerationCallback startFunc
 
 EvolverBuilder& EvolverBuilder::SetElitePercent(float elitePercent)
 {
-	elitePercent = std::clamp(elitePercent, 0.0f, 1.0f);
+	this->elitePercent = std::clamp(elitePercent, 0.0f, 1.0f);
 	return *this;
 }
 
@@ -29,7 +29,7 @@ EvolverBuilder& EvolverBuilder::SetEpisodeParameters(bool staticEpisodes, bool t
 EvolverBuilder& EvolverBuilder::SetMutation(EvolverMutationType type, float mutationRate, float mutationScale)
 {
 	mutationType = type;
-	this->mutationRate = mutationRate;
+	this->mutationRate = std::clamp(mutationRate, 0.0f, 1.0f);
 	this->mutationScale = mutationScale;
 	return *this;
 }
@@ -80,7 +80,7 @@ EvolverBuilder& EvolverBuilder::SetUserPointer(void* ptr)
 	return *this;
 }
 
-NetworkEvolver&& EvolverBuilder::Build()
+NetworkEvolver EvolverBuilder::Build()
 {
 	return NetworkEvolver(*this);
 }

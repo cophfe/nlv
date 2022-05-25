@@ -1,11 +1,16 @@
 #include "PoleGame.h"
 
-void PoleGame::Run()
+void FlappyBird::Run()
 {
 	Network network(INPUT_COUNT, { 1 }, 1);
-	NetworkEvolverDefinition def(network, POPULATION_SIZE, MAX_STEPS, 0.02f, 0.6f, StepFunction, EvolverMutationType::Set, EvolverCrossoverType::TwoPoint,
-		EvolverSelectionType::FitnessProportional, OnStartGeneration, nullptr, false, false, time(0), 30);
-	NetworkEvolver evolver = NetworkEvolver(def);
+	EvolverBuilder def = EvolverBuilder(network, StepFunction, POPULATION_SIZE, MAX_STEPS, time(0))
+		.SetMutation(EvolverMutationType::Add, 0.2f, 1.0f)
+		.SetCrossover(EvolverCrossoverType::Uniform)
+		.SetSelection(EvolverSelectionType::FitnessProportional)
+		.SetCallbacks(OnStartGeneration, nullptr)
+		.SetElitePercent(0.02f)
+		.SetEpisodeParameters(false, true, 10U);
+	NetworkEvolver evolver = def.Build();
 	SetupStartSystem();
 	evolver.SetUserPointer(this);
 	evolver.EvaluateGeneration();
@@ -18,7 +23,7 @@ void PoleGame::Run()
 
 	struct {
 		Network network;
-		PoleSystem system;
+		BirdSystem system;
 		float fitness = 0;
 		float continueTimer = 0;
 		unsigned int steps = 0;
@@ -33,14 +38,14 @@ void PoleGame::Run()
 	float averageFitness = 0;
 	float lowestFitness = 10000000000000000000.0f;
 	{
-		const NetworkOrganism* organisms = evolver.GetOrganisms();
-		for (int i = 0; i < evolver.GetPopulation(); i++)
+		const NetworkOrganism* organisms = evolver.GetPopulationArray();
+		for (int i = 0; i < evolver.GetPopulationSize(); i++)
 		{
 			averageFitness += organisms[i].fitness;
 			lowestFitness = std::min(organisms[i].fitness, lowestFitness);
 			highestFitness = std::max(organisms[i].fitness, highestFitness);
 		}
-		averageFitness /= evolver.GetPopulation();
+		averageFitness /= evolver.GetPopulationSize();
 	}
 	
 	bool lappingGenerations = false;
@@ -91,26 +96,26 @@ void PoleGame::Run()
 			EndDrawing();
 			evolver.EvaluateGeneration();
 			testOrganism.system = templateSystem;
-			const NetworkOrganism* organisms = evolver.GetOrganisms();
+			const NetworkOrganism* organisms = evolver.GetPopulationArray();
 			highestFitness = -10000000000000000000.0f;
 			averageFitness = 0;
 			lowestFitness = 10000000000000000000.0f;
-			for (int i = 0; i < evolver.GetPopulation(); i++)
+			for (int i = 0; i < evolver.GetPopulationSize(); i++)
 			{
 				averageFitness += organisms[i].fitness;
 				lowestFitness = std::min(organisms[i].fitness, lowestFitness);
 				highestFitness = std::max(organisms[i].fitness, highestFitness);
 			}
-			averageFitness /= evolver.GetPopulation();
+			averageFitness /= evolver.GetPopulationSize();
 			continue;
 		}
 		if (runBest.Pressed())
 		{
 			//clone network from best organism
-			const NetworkOrganism* organisms = evolver.GetOrganisms();
+			const NetworkOrganism* organisms = evolver.GetPopulationArray();
 			float fitness = organisms[0].fitness;
 			testOrganism.orgIndex = 0;
-			for (size_t i = 1; i < evolver.GetPopulation(); i++)
+			for (size_t i = 1; i < evolver.GetPopulationSize(); i++)
 			{
 				if (organisms[i].fitness > fitness)
 				{
@@ -130,7 +135,7 @@ void PoleGame::Run()
 		if (runRand.Pressed())
 		{
 			testOrganism.orgIndex = indexDist(random);
-			testOrganism.network = evolver.GetOrganisms()[testOrganism.orgIndex].GetNetwork();
+			testOrganism.network = evolver.GetPopulationArray()[testOrganism.orgIndex].GetNetwork();
 			//set snake values to the same as the initial values for this generation
 			testOrganism.system = templateSystem;
 			testOrganism.steps = 0;
@@ -169,21 +174,21 @@ void PoleGame::Run()
 	}
 }
 
-PoleGame::PoleGame()
+FlappyBird::FlappyBird()
 {
 	SetConfigFlags(FLAG_MSAA_4X_HINT);// | FLAG_VSYNC_HINT);
 	InitWindow(1000, 600, "Snake Test");
 	random.seed(time(0));
 }
 
-PoleGame::~PoleGame()
+FlappyBird::~FlappyBird()
 {
 	CloseWindow();
 }
 
-void PoleGame::OnStartGeneration(const NetworkEvolver& evolver, NetworkOrganism* organisms)
+void FlappyBird::OnStartGeneration(const NetworkEvolver& evolver, NetworkOrganism* organisms)
 {
-	PoleGame* ptr = (PoleGame*)evolver.GetUserPointer();
+	FlappyBird* ptr = (FlappyBird*)evolver.GetUserPointer();
 	ptr->SetupStartSystem();
 	auto& ts = ptr->templateSystem;
 	
@@ -194,14 +199,14 @@ void PoleGame::OnStartGeneration(const NetworkEvolver& evolver, NetworkOrganism*
 	}
 }
 
-void PoleGame::StepFunction(const NetworkEvolver& evolver, NetworkOrganism& organism, int organismIndex)
+void FlappyBird::StepFunction(const NetworkEvolver& evolver, NetworkOrganism& organism, int organismIndex)
 {
-	PoleGame* ptr = (PoleGame*)evolver.GetUserPointer();
+	FlappyBird* ptr = (FlappyBird*)evolver.GetUserPointer();
 	ptr->StepOrganism(ptr->systems[organismIndex], *organism.GetNetworkOutputActivations(), organism.fitness, organism.continueStepping);
 	SetNetworkInputs(ptr->systems[organismIndex], organism.GetNetworkInputArray());
 }
 
-void PoleGame::SetNetworkInputs(PoleSystem& system, float* inputs)
+void FlappyBird::SetNetworkInputs(BirdSystem& system, float* inputs)
 {
 	//inputs[0] = system.time;
 	inputs[0] = system.cartPosition;
@@ -212,13 +217,13 @@ void PoleGame::SetNetworkInputs(PoleSystem& system, float* inputs)
 	inputs[5] = system.pole2Velocity;
 }
 
-void PoleGame::StepOrganism(PoleSystem& system, float networkOutput, float& fitness, bool& continueStepping)
+void FlappyBird::StepOrganism(BirdSystem& system, float networkOutput, float& fitness, bool& continueStepping)
 {
 	//fitness += TIME_STEP; //fitness == time
 	//fitness += (POLE_FAILURE_ANGLE - glm::abs( system.poleAngle); //just to remove the spice, the less wobbly the sticks the better
 	fitness += glm::abs(system.poleAngle) + glm::abs(system.pole2Angle); //just to add more spice, the wobblier the sticks the better
 	//fitness += glm::abs(system.pole2Angle - system.poleAngle); //the further apart the sticks, the more points
-	float force = glm::sign(networkOutput - 0.5f) * FORCE;
+	float force = glm::sign(networkOutput - 0.5f) * MOVEMENT_SPEED;
 
 	system.cartPosition += TIME_STEP * system.cartVelocity;
 	system.cartVelocity += TIME_STEP * system.cartAcceleration;
@@ -227,18 +232,18 @@ void PoleGame::StepOrganism(PoleSystem& system, float networkOutput, float& fitn
 	system.poleVelocity += TIME_STEP * system.poleAcceleration;
 	system.pole2Velocity += TIME_STEP * system.pole2Acceleration;
 	
-	float iMass = 1.0f / (CART_MASS + POLE_MASS);
+	float iMass = 1.0f / (SPACE_MAX_HEIGHT + POLE_MAX_HEIGHT);
 	float cosAngle = glm::cos(system.poleAngle);
 	float sinAngle = glm::sin(system.poleAngle);
 
-	system.cartAcceleration = (force + POLE_MASS * POLE_LENGTH * (system.poleVelocity * system.poleVelocity * sinAngle - system.poleAcceleration * cosAngle)) * iMass;
+	system.cartAcceleration = (force + POLE_MAX_HEIGHT * SPACE_MIN_HEIGHT * (system.poleVelocity * system.poleVelocity * sinAngle - system.poleAcceleration * cosAngle)) * iMass;
 	
 	system.poleAcceleration = GRAVITY * sinAngle + cosAngle *
-		(-force - POLE_MASS * POLE_LENGTH * system.poleVelocity * system.poleVelocity * sinAngle * iMass);
-	system.poleAcceleration /= POLE_LENGTH * (4.0f / 3.0f - POLE_MASS * cosAngle * cosAngle * iMass);
+		(-force - POLE_MAX_HEIGHT * SPACE_MIN_HEIGHT * system.poleVelocity * system.poleVelocity * sinAngle * iMass);
+	system.poleAcceleration /= SPACE_MIN_HEIGHT * (4.0f / 3.0f - POLE_MAX_HEIGHT * cosAngle * cosAngle * iMass);
 	system.pole2Acceleration = GRAVITY * sinAngle + cosAngle *
-		(-force - POLE_2_MASS * POLE_2_LENGTH * system.pole2Velocity * system.pole2Velocity * sinAngle * iMass);
-	system.pole2Acceleration /= POLE_2_LENGTH * (4.0f / 3.0f - POLE_2_MASS * cosAngle * cosAngle * iMass);
+		(-force - BAR_MIN_HEIGHT * POLE_2_LENGTH * system.pole2Velocity * system.pole2Velocity * sinAngle * iMass);
+	system.pole2Acceleration /= POLE_2_LENGTH * (4.0f / 3.0f - BAR_MIN_HEIGHT * cosAngle * cosAngle * iMass);
 
 	if (glm::abs(system.poleAngle) >= POLE_FAILURE_ANGLE || glm::abs(system.pole2Angle) >= POLE_FAILURE_ANGLE
 		|| glm::abs(system.cartPosition) >= TRACK_LIMIT)
@@ -247,7 +252,7 @@ void PoleGame::StepOrganism(PoleSystem& system, float networkOutput, float& fitn
 	}
 }
 
-void PoleGame::SetupStartSystem()
+void FlappyBird::SetupStartSystem()
 {
 	templateSystem.cartVelocity = 0;
 	templateSystem.cartAcceleration = 0;
@@ -255,15 +260,15 @@ void PoleGame::SetupStartSystem()
 	templateSystem.poleAcceleration = 0;
 	templateSystem.pole2Velocity = 0;
 	templateSystem.pole2Acceleration = 0;
-	//templateSystem.poleAngle = 0;
-	//templateSystem.pole2Angle = 0;
-	//templateSystem.cartPosition = 0;
-	templateSystem.poleAngle = dist(random);
-	templateSystem.pole2Angle = dist(random);
-	templateSystem.cartPosition = dist(random);
+	templateSystem.poleAngle = 0;
+	templateSystem.pole2Angle = 0;
+	templateSystem.cartPosition = 0;
+	//templateSystem.poleAngle = dist(random);
+	//templateSystem.pole2Angle = dist(random);
+	//templateSystem.cartPosition = dist(random);
 }
 
-void PoleGame::DrawGame(PoleSystem& system, short x, short y, short sizeX, short sizeY, short floorSize)
+void FlappyBird::DrawGame(BirdSystem& system, short x, short y, short sizeX, short sizeY, short floorSize)
 {
 	DrawRectangle(x, y, sizeX, sizeY, DARKGRAY);
 	unsigned short borderSize = std::min(sizeX / 100, 1);
@@ -281,7 +286,7 @@ void PoleGame::DrawGame(PoleSystem& system, short x, short y, short sizeX, short
 	Vec2 cartStart = Vec2(x + sizeX / 2 - cartSizeY + unit * system.cartPosition, y + sizeY - floorSize - cartSizeY);
 	DrawRectangle(cartStart.x, cartStart.y, cartSizeY * 2, cartSizeY, SKYBLUE);
 	Vec2 start = Vec2(cartStart.x + cartSizeY, cartStart.y);
-	Vec2 offset =  (POLE_LENGTH * 2.0f * unit) * Vec2(glm::sin(system.poleAngle), glm::cos(system.poleAngle));
+	Vec2 offset =  (SPACE_MIN_HEIGHT * 2.0f * unit) * Vec2(glm::sin(system.poleAngle), glm::cos(system.poleAngle));
 	DrawLine(start.x, start.y, start.x + offset.x, start.y - offset.y, WHITE);
 	Vec2 offset2 =  (POLE_2_LENGTH * 2.0f * unit) * Vec2(glm::sin(system.pole2Angle), glm::cos(system.pole2Angle));
 	DrawLine(start.x, start.y, start.x + offset2.x, start.y - offset2.y, LIGHTGRAY);
@@ -293,7 +298,7 @@ void PoleGame::DrawGame(PoleSystem& system, short x, short y, short sizeX, short
 
 	static const float failCos = glm::cos(POLE_FAILURE_ANGLE);
 	static const float failSin = glm::sin(POLE_FAILURE_ANGLE);
-	Vec2 failOffset = (POLE_LENGTH * 2.0f * unit) * Vec2(failSin, failCos);
+	Vec2 failOffset = (SPACE_MIN_HEIGHT * 2.0f * unit) * Vec2(failSin, failCos);
 	DrawLine(start.x, start.y, start.x + failOffset.x, start.y - failOffset.y, RED);
 	DrawLine(start.x, start.y, start.x - failOffset.x, start.y - failOffset.y, RED);
 	

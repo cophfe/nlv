@@ -12,10 +12,10 @@ Network::Network()
 	initialized = false;
 }
 
-Network::Network(uint32_t inputNeurons, std::initializer_list<uint32_t> hiddenLayerNeurons, uint32_t outputNeurons)
+Network::Network(int inputNeurons, std::initializer_list<int> hiddenLayerNeurons, int outputNeurons)
 	: inputCount(inputNeurons)
 {
-	if (inputNeurons == 0 || outputNeurons == 0)
+	if (inputNeurons <= 0 || outputNeurons <= 0)
 		throw std::runtime_error("Neuron count cannot be less than or equal to 0");
 
 	layerCount = hiddenLayerNeurons.size() + 1;
@@ -28,7 +28,7 @@ Network::Network(uint32_t inputNeurons, std::initializer_list<uint32_t> hiddenLa
 	//find the number of genes in the network
 	geneCount = 0;
 
-	uint32_t maxNeurons = 0;
+	int maxNeurons = 0;
 	size_t i = 0;
 	for (auto&& layerOutputs : hiddenLayerNeurons)
 	{
@@ -40,6 +40,57 @@ Network::Network(uint32_t inputNeurons, std::initializer_list<uint32_t> hiddenLa
 		layers[i].outputCount = layerOutputs;
 		geneCount += (inputCount + 1) * layerOutputs;
 		
+		//find max neurons
+		maxNeurons = std::max(maxNeurons, layerOutputs);
+		inputCount = layerOutputs;
+		i++;
+	}
+	//setup output layer values
+	layers[i].geneIndex = geneCount;
+	layers[i].outputCount = outputNeurons;
+	geneCount += (inputCount + 1) * outputNeurons;
+	maxNeurons = std::max(maxNeurons, outputNeurons);
+
+	//with the max amount of neurons, create an activations array that can hold any layer's activations
+	//this will be used internally, so that I don't have to allocate an array for every layer
+	//this is probably considered to be terrible code
+	activations = new float[maxNeurons * 2];
+	activationsTranslation = maxNeurons;
+	genes = new float[geneCount];
+
+	initialized = true;
+}
+
+Network::Network(int inputNeurons, std::vector<int> hiddenLayerNeurons, int outputNeurons)
+	: inputCount(inputNeurons)
+{
+	//literal copy paste but with vector instead of initializer list
+
+	if (inputNeurons <= 0 || outputNeurons <= 0)
+		throw std::runtime_error("Neuron count cannot be less than or equal to 0");
+
+	layerCount = hiddenLayerNeurons.size() + 1;
+
+	//create an uninitialized array of layers
+	layers = (Network::Layer*)malloc(sizeof(Network::Layer) * layerCount);
+
+	//get the input count for the first layer
+	uint32_t inputCount = inputNeurons;
+	//find the number of genes in the network
+	geneCount = 0;
+
+	int maxNeurons = 0;
+	size_t i = 0;
+	for (auto&& layerOutputs : hiddenLayerNeurons)
+	{
+		if (layerOutputs <= 0)
+			throw std::runtime_error("Neuron count cannot be less than or equal to 0");
+
+		//setup layer values
+		layers[i].geneIndex = geneCount;
+		layers[i].outputCount = layerOutputs;
+		geneCount += (inputCount + 1) * layerOutputs;
+
 		//find max neurons
 		maxNeurons = std::max(maxNeurons, layerOutputs);
 		inputCount = layerOutputs;

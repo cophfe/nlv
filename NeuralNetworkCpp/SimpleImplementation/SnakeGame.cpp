@@ -11,10 +11,15 @@ SnakeGame::SnakeGame()
 void SnakeGame::Run()
 {
 	//best i have had so far is 1 hidden layer with 6 neurons
-	Network network = Network(4, { 6 }, 3);
-	NetworkEvolverDefinition def(network, POPULATION_SIZE, MAX_STEPS, 0.02f, 0.6f, StepFunction, EvolverMutationType::Set, EvolverCrossoverType::Point, 
-		EvolverSelectionType::Ranked, OnStartGeneration, nullptr, true, true, time(0), 1, 15, 10);
-	NetworkEvolver evolver(def);
+	Network network = Network(4, { 15 }, 3);
+	EvolverBuilder def = EvolverBuilder(network, StepFunction, POPULATION_SIZE, MAX_STEPS, time(0))
+		.SetMutation(EvolverMutationType::Set, 0.9f)
+		.SetCrossover(EvolverCrossoverType::Point)
+		.SetSelection(EvolverSelectionType::Ranked)
+		.SetCallbacks(OnStartGeneration, nullptr)
+		.SetElitePercent(0.02f)
+		.SetEpisodeParameters(true, true, 10U);
+	NetworkEvolver evolver = def.Build();
 	evolver.SetUserPointer(this);
 	SetupStartSystem();
 	evolver.EvaluateGeneration();
@@ -38,14 +43,14 @@ void SnakeGame::Run()
 	float highestFitness = -10000000000000000000.0f;
 	float averageFitness = 0;
 	float lowestFitness = 10000000000000000000.0f;
-	const NetworkOrganism* organisms = evolver.GetOrganisms();
-	for (int i = 0; i < evolver.GetPopulation(); i++)
+	const NetworkOrganism* organisms = evolver.GetPopulationArray();
+	for (int i = 0; i < evolver.GetPopulationSize(); i++)
 	{
 		averageFitness += organisms[i].fitness;
 		lowestFitness = std::min(organisms[i].fitness, lowestFitness);
 		highestFitness = std::max(organisms[i].fitness, highestFitness);
 	}
-	averageFitness /= evolver.GetPopulation();
+	averageFitness /= evolver.GetPopulationSize();
 	bool lappingGenerations = false;
 	lastTime = std::chrono::high_resolution_clock::now();
 
@@ -97,19 +102,19 @@ void SnakeGame::Run()
 			evolver.EvaluateGeneration();
 			testOrganism.system = startSystem;
 
-			
-			
-			organisms = evolver.GetOrganisms();
+
+
+			organisms = evolver.GetPopulationArray();
 			highestFitness = -10000000000000000000.0f;
 			averageFitness = 0;
 			lowestFitness = 10000000000000000000.0f;
-			for (int i = 0; i < evolver.GetPopulation(); i++)
+			for (int i = 0; i < evolver.GetPopulationSize(); i++)
 			{
 				averageFitness += organisms[i].fitness;
 				lowestFitness = std::min(organisms[i].fitness, lowestFitness);
 				highestFitness = std::max(organisms[i].fitness, highestFitness);
 			}
-			averageFitness /= evolver.GetPopulation();
+			averageFitness /= evolver.GetPopulationSize();
 			continue;
 		}
 		if (runBest.Pressed())
@@ -129,7 +134,7 @@ void SnakeGame::Run()
 		{
 			//clone network from best organism
 			int randomIndex = dist(random) * (POPULATION_SIZE / (GRID_SIZE - 1));
-			testOrganism.network = evolver.GetOrganisms()[randomIndex].GetNetwork();
+			testOrganism.network = evolver.GetPopulationArray()[randomIndex].GetNetwork();
 			//set snake values to the same as the initial values for this generation
 			testOrganism.system = startSystem;
 			testOrganism.steps = 0;
@@ -139,11 +144,11 @@ void SnakeGame::Run()
 
 			SetNetworkInputs(testOrganism.system, testOrganism.inputs);
 		}
-		
+
 		if (testOrganism.running)
 		{
 			testOrganism.stepTimer += deltaTime;
-			if (testOrganism.stepTimer >= STEP_TIME || (IsKeyDown(KEY_SPACE) && testOrganism.stepTimer >= 0.01f) 
+			if (testOrganism.stepTimer >= STEP_TIME || (IsKeyDown(KEY_SPACE) && testOrganism.stepTimer >= 0.01f)
 				|| (IsKeyDown(KEY_LEFT_CONTROL) && testOrganism.stepTimer >= 0.003f)
 				|| (IsKeyDown(KEY_LEFT_ALT)))
 			{
@@ -265,15 +270,15 @@ void SnakeGame::StepOrganism(SnakeSystem& system, const float* networkOutputs, f
 	switch (StepSystem(system))
 	{
 	case SystemState::NOTHING:
-		fitness += FITNESS_GAIN;
 		break;
 	case SystemState::GAME_OVER:
 		continueStepping = false;
 		return;
 	case SystemState::APPLE_GET:
-		system.stepsLeft += APPLE_GAIN;
+		system.stepsLeft = std::min(system.stepsLeft + APPLE_GAIN, MAX_REMAINING_STEPS);
 		break;
 	}
+	fitness = system.body.size();
 
 	system.stepsLeft--;
 	if (system.stepsLeft <= 0)
@@ -302,6 +307,8 @@ SnakeGame::SystemState SnakeGame::StepSystem(SnakeSystem& system)
 	//if head intersects with apple place apple in new place
 	if (newCoord.x == system.appleCoord.x && newCoord.y == system.appleCoord.y)
 	{
+		system.amountToAdd += SIZE_GAIN;
+
 		//place apple in new place
 		bool appleIntersecting = false;
 		//loop apple placement until it isn't on body
@@ -313,9 +320,11 @@ SnakeGame::SystemState SnakeGame::StepSystem(SnakeSystem& system)
 		} while (appleIntersecting);
 		return SystemState::APPLE_GET;
 	}
-	else
-		system.body.pop_back();
 
+	if (system.amountToAdd <= 0)
+		system.body.pop_back();
+	else
+		system.amountToAdd--;
 	return SystemState::NOTHING;
 }
 
@@ -375,6 +384,7 @@ void SnakeGame::SetupStartSystem()
 	startSystem.body.push_back(startSystem.body[0] + Coord(0, 1));
 	startSystem.body.push_back(startSystem.body[0] + Coord(0, 2));
 	startSystem.stepsLeft = STARTING_STEPS;
+	startSystem.amountToAdd = 0;
 
 	bool appleIntersecting = false;
 	//loop apple placement until it isn't on body

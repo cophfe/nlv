@@ -18,12 +18,12 @@ typedef glm::vec2 Vec2;
 constexpr int POPULATION_SIZE = 1000;
 constexpr int INPUT_COUNT = 6;
 
-constexpr float FORCE = 10;
+constexpr float MOVEMENT_SPEED = 10;
 constexpr float GRAVITY = -9.81f;
-constexpr float POLE_MASS = 0.1f;
-constexpr float POLE_2_MASS = 0.2f;
-constexpr float CART_MASS = 1.0f;
-constexpr float POLE_LENGTH = 0.5f;
+constexpr float POLE_MAX_HEIGHT = 0.1f;
+constexpr float BAR_MIN_HEIGHT = 0.2f;
+constexpr float SPACE_MAX_HEIGHT = 1.0f;
+constexpr float SPACE_MIN_HEIGHT = 0.5f;
 constexpr float POLE_2_LENGTH = 0.7f;
 constexpr float TRACK_LIMIT = 2.4f;
 constexpr float POLE_FAILURE_ANGLE = 0.209f; // degrees: 12.0f;
@@ -31,7 +31,7 @@ constexpr float TIME_STEP = 1.0f / 50.0f;
 constexpr float MAX_TIME = 60.0f;
 constexpr int MAX_STEPS = MAX_TIME/TIME_STEP;
 
-struct PoleSystem
+struct BirdSystem
 {
 	float poleAngle;
 	float poleVelocity;
@@ -44,25 +44,25 @@ struct PoleSystem
 	float cartAcceleration;
 };
 
-class PoleGame
+class FlappyBird
 {
 public:
 	void Run();
-	PoleGame();
-	~PoleGame();
+	FlappyBird();
+	~FlappyBird();
 private:
 	static void OnStartGeneration(const NetworkEvolver& evolver, NetworkOrganism* organisms);
 	static void StepFunction(const NetworkEvolver& evolver, NetworkOrganism& organism, int organismIndex);
-	static void SetNetworkInputs(PoleSystem& system, float* inputs);
-	void StepOrganism(PoleSystem& system, float networkOutput, float& fitness, bool& continueStepping);
+	static void SetNetworkInputs(BirdSystem& system, float* inputs);
+	void StepOrganism(BirdSystem& system, float networkOutput, float& fitness, bool& continueStepping);
 	void SetupStartSystem();
-	void DrawGame(PoleSystem& system, short x, short y, short sizeX, short sizeY, short floorSize);
+	void DrawGame(BirdSystem& system, short x, short y, short sizeX, short sizeY, short floorSize);
 
-	PoleSystem templateSystem;
+	BirdSystem templateSystem;
 	std::minstd_rand random;
 	std::normal_distribution<float> dist = std::normal_distribution<float>(0, 0.03f);
 	std::uniform_int_distribution<short> indexDist = std::uniform_int_distribution<short>(0, POPULATION_SIZE - 1);
-	PoleSystem systems[POPULATION_SIZE];
+	BirdSystem systems[POPULATION_SIZE];
 	float deltaTime;		
 	std::chrono::high_resolution_clock::time_point lastTime;
 };

@@ -12,12 +12,13 @@ class Network
 	friend NetworkEvolver;
 public:
 	Network(); //note: this initializes an empty network, which will not be able to do anything
-	Network(uint32_t inputs, std::initializer_list<uint32_t> hiddenLayerNeurons, uint32_t outputs);
-	~Network();
+	Network(int inputs, std::initializer_list<int> hiddenLayerNeurons, int outputs);
+	Network(int inputs, std::vector<int> hiddenLayerNeurons, int outputs);
 	Network(const Network& other);
 	Network(Network&& other);
 	Network& operator=(const Network& other);
 	Network& operator=(Network&& other);
+	~Network();
 
 	/// <returns>A neural network with the same layout as this one (but not the same values)</returns>
 	Network CloneNetworkLayout();

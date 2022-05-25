@@ -9,8 +9,9 @@
 #include "NetworkEvolver.h"
 #include "Button.h"
 
-constexpr int POPULATION_SIZE = 2000;
+constexpr int POPULATION_SIZE = 500;
 constexpr int MAX_STEPS = 10000;
+constexpr int MAX_REMAINING_STEPS = 300;
 constexpr int STARTING_STEPS = 200;
 constexpr float FITNESS_GAIN = 0.5f;
 //too high, and it becomes locally beneficial to just loop around in a way that cannot harm you but also means you cannot get more apples
@@ -18,6 +19,7 @@ constexpr float FITNESS_GAIN = 0.5f;
 constexpr int APPLE_GAIN = 75;
 constexpr int GRID_SIZE = 30;
 constexpr float STEP_TIME = 0.1f;
+constexpr int SIZE_GAIN = 4;
 
 //this snake implementation is based on this resource: http://ceur-ws.org/Vol-2468/p9.pdf
 class SnakeGame
@@ -49,6 +51,7 @@ private:
 		std::vector<Coord> body;
 		Direction movementDirection;
 		int stepsLeft;
+		int amountToAdd;
 	};
 	
 
