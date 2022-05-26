@@ -77,6 +77,9 @@ public:
 	inline void SetMutationType (EvolverMutationType type)				{ mutationType = type; }
 	inline void SetSelectionType (EvolverSelectionType type)			{ selectionType = type; }
 	inline void SetUserPointer(void* ptr)								{ userPointer = ptr; }
+	void SetCustomCrossover(EvolverCustomCrossoverCallback callback);
+	void SetCustomMutation(EvolverCustomMutationCallback callback);
+	void SetCustomSelection(EvolverCustomSelectionCallback callback);
 
 private:
 	// Create the next generation based on values from the last generation

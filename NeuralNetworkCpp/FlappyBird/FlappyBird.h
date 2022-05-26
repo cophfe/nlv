@@ -56,7 +56,9 @@ private:
 	static void SetNetworkInputs(BirdSystem& system, float* inputs);
 	void StepOrganism(BirdSystem& system, float networkOutput, float& fitness, bool& continueStepping);
 	void SetupStartSystem();
-
+	void SetCurrentSolution(int organismIndex);
+	void SetCurrentSolutionToPlayMode();
+	void RunCurrentSolution();
 	void ConfigureEvolver();
 	Renderer app;
 	NetworkEvolver evolver;
@@ -90,16 +92,20 @@ private:
 	float minEver = 0;
 
 	struct {
+		int playSpeed = 0;
+		bool isAI = false;
+		unsigned int orgIndex = 0;
 		Network network;
 		BirdSystem system;
 		float fitness = 0;
 		float continueTimer = 0;
 		unsigned int steps = 0;
-		unsigned int orgIndex = 0;
 		float inputs[INPUT_COUNT];
 		bool running = false;
+		bool manualJump = false;
+	} currentSolution;
 
-	} testOrganism;
+	static void OnKeyPressed(GLFWwindow* window, int keycode, int scancode, int action, int mods);
 };
 
 

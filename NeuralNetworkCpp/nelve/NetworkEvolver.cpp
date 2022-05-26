@@ -613,3 +613,22 @@ void NetworkEvolver::SetStepCallback(EvolverStepCallback callback)
 		throw std::runtime_error("Step callback cannot be set to nullptr"); 
 	stepCallback = callback;
 }
+
+void NetworkEvolver::SetCustomCrossover(EvolverCustomCrossoverCallback callback)
+{
+	crossoverCallback = callback;
+	crossoverType = EvolverCrossoverType::Custom;
+}
+
+void NetworkEvolver::SetCustomMutation(EvolverCustomMutationCallback callback)
+{
+	mutationCallback = callback;
+	mutationType = EvolverMutationType::Custom;
+}
+
+void NetworkEvolver::SetCustomSelection(EvolverCustomSelectionCallback callback)
+{
+	selectionCallback = callback;
+	selectionType = EvolverSelectionType::Custom;
+
+}

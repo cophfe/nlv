@@ -5,7 +5,7 @@ void FlappyBird::Run()
 	Network network(INPUT_COUNT, { 1 }, 1);
 	EvolverBuilder def = EvolverBuilder(network, StepFunction, POPULATION_SIZE, MAX_STEPS, time(0))
 		.SetMutation(EvolverMutationType::Add, 0.2f, 1.0f)
-		.SetCrossover(EvolverCrossoverType::Uniform)
+		.SetCrossover(EvolverCrossoverType::Arithmetic)
 		.SetSelection(EvolverSelectionType::FitnessProportional)
 		.SetCallbacks(OnStartGeneration, nullptr)
 		.SetElitePercent(0.02f)
@@ -19,7 +19,6 @@ void FlappyBird::Run()
 	Button doGenerationsButton(Coord(25, 260), Coord(250, 50), RED, MAROON, WHITE, 30, 10, "Do Generations", nullptr);
 	Button runBest(Coord(730, 50), Coord(250, 50), RED, MAROON, WHITE, 30, 10, "Run Best", nullptr);
 	Button runRand(Coord(730, 120), Coord(250, 50), RED, MAROON, WHITE, 30, 10, "Run Random", nullptr);
-
 
 	struct {
 		Network network;

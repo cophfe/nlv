@@ -1,10 +1,9 @@
 #include "Renderer.h"
 
-void Renderer::Setup(GLuint width, GLuint height, const char* title)
+void Renderer::SetupWindow(GLuint width, GLuint height, const char* title)
 {
 	if (glfwInit() == GL_FALSE)
 		throw std::runtime_error("Something went wrong!");
-
 
 	window = glfwCreateWindow(width, height, title, nullptr, nullptr);
 	if (!window)
@@ -21,13 +20,17 @@ void Renderer::Setup(GLuint width, GLuint height, const char* title)
 		throw std::runtime_error("Something went wrong!");
 	}
 
+	glfwSwapInterval(0);
 	glClearColor(0, 0, 0, 1);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
+}
 
+void Renderer::SetupImgui()
+{
 	//Set up imgui (https://github.com/ocornut/imgui)
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();

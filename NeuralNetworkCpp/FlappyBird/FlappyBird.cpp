@@ -10,14 +10,18 @@ void FlappyBird::Run()
 		{
 			//poll
 			glfwPollEvents();
-			//setup deltatime
+			//set deltatime
 			std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
 			deltaTime = (float)std::chrono::duration_cast<std::chrono::duration<double>>(start - lastTime).count();
 			lastTime = start;
 
+			//Draw UI
 			DrawEvolverWindow();
 			DrawDataWindow();
 			DrawPlayWindow();
+
+			//Run solution
+			RunCurrentSolution();
 		}
 		app.EndFrame();
 	}
@@ -29,7 +33,15 @@ FlappyBird::FlappyBird()
 	
 	random.seed(seed);
 
-	app.Setup(1000, 700, "hello there");
+	//setup rendering and callbacks
+	app.SetupWindow(1000, 700, "hello there");
+	glfwSetWindowUserPointer(app.GetWindow(), this);
+	glfwSetKeyCallback(app.GetWindow(), OnKeyPressed);
+	app.SetupImgui();
+
+	//set evolver to default
+	evolverIsSetup = true;
+	ConfigureEvolver();
 }
 
 FlappyBird::~FlappyBird()
@@ -58,7 +70,7 @@ void FlappyBird::DrawEvolverWindow()
 {
 	//if  the evolver isn't setup, show setup UI
 	ImGui::Begin("Configure");
-	if (evolverIsSetup || evolverIsRunning)
+	if (evolverIsSetup)
 		ImGui::BeginDisabled();
 
 	//show neural network information
@@ -87,24 +99,52 @@ void FlappyBird::DrawEvolverWindow()
 	}
 	ImGui::Spacing();
 
+	bool disabledWhileRunning = false;
 	if (evolverIsSetup)
 	{
 		ImGui::EndDisabled();
 
+		if (evolverIsRunning)
+		{
+			disabledWhileRunning = true;
+			ImGui::BeginDisabled();
+		}
 		if (ImGui::Button("Restart and Reconfigure"))
 		{
-			ImGui::OpenPopup("Reconfigure Evolver?");
+			if (evolver.GetGeneration() == 0 || !evolver.GetIsInitiated())
+			{
+				//allow user to reconfigure evolver
+				evolver = NetworkEvolver();
+				SetupStartSystem();
+				currentSolution.system = templateSystem;
+				evolverIsSetup = false;
+				averages.clear();
+				maximums.clear();
+				minimums.clear();
+				maxEver = 100;
+				minEver = 0;
+			}
+			else
+			{
+				ImGui::OpenPopup("Reconfigure Evolver?");
+			}
 		}
 		if (ImGui::BeginPopup("Reconfigure Evolver?"))
 		{
+			
 			if (ImGui::Button("Confirm"))
 			{
 				//allow user to reconfigure evolver
 				evolver = NetworkEvolver();
 				SetupStartSystem();
-				testOrganism.system = templateSystem;
+				currentSolution.system = templateSystem;
 				evolverIsSetup = false;
 				ImGui::CloseCurrentPopup();
+				averages.clear();
+				maximums.clear();
+				minimums.clear();
+				maxEver = 100;
+				minEver = 0;
 			}
 			ImGui::SameLine();
 			if (ImGui::Button("Cancel"))
@@ -121,16 +161,13 @@ void FlappyBird::DrawEvolverWindow()
 			evolverIsSetup = true;
 			ConfigureEvolver();
 		}
-
-		if (evolverIsRunning)
-			ImGui::EndDisabled();
 	}
 
+	
 	//Episode
 	ImGui::Separator();
 	ImGui::Text("These values can be modified after construction");
 	{
-		ImGui::BeginDisabled(evolverIsRunning);
 
 		if (ImGui::Checkbox("Multithread episodes", &multithread))
 			evolver.SetIsThreadedEpisodes(multithread);
@@ -159,9 +196,9 @@ void FlappyBird::DrawEvolverWindow()
 			staticEpisodes = DEFAULT_STATIC;
 		}
 
-		ImGui::EndDisabled();
 	}
-
+	if (disabledWhileRunning)
+		ImGui::EndDisabled();
 	ImGui::End();
 }
 
@@ -170,7 +207,7 @@ void FlappyBird::DrawDataWindow()
 {
 	ImGui::Begin("Data");
 
-	ImGui::BeginDisabled(!evolverIsSetup);
+	ImGui::BeginDisabled(!evolverIsSetup || evolverIsRunning);
 	if (ImGui::Button("Run Generation"))
 	{
 		std::thread thread(&FlappyBird::RunGeneration, this);
@@ -217,27 +254,128 @@ void FlappyBird::DrawPlayWindow()
 {
 	ImGui::Begin("Test");
 
-	if (evolver.GetIsInitiated())
+	bool beginDisabled;
+	bool beginSolutionDisabled = false;
+	if (beginDisabled = evolverIsRunning || !evolverIsSetup)
+		ImGui::BeginDisabled();
+
+	ImGui::Text("Preview AI");
+	if (ImGui::Button("Random"))
+	{
+		std::uniform_int_distribution<int> dist(0, evolver.GetPopulationSize() - 1);
+		SetCurrentSolution(dist(random));
+	}
+	ImGui::SameLine();
+	if (ImGui::Button("Best"))
+	{
+		const NetworkOrganism* organisms = evolver.GetPopulationArray();
+		float fitness = organisms[0].fitness;
+		int orgIndex = 0;
+		for (size_t i = 1; i < evolver.GetPopulationSize(); i++)
+		{
+			if (organisms[i].fitness > fitness)
+			{
+				fitness = organisms[i].fitness;
+				orgIndex = i;
+			}
+		}
+		SetCurrentSolution(orgIndex);
+	}
+	ImGui::SameLine();
+	if (ImGui::Button("Choose"))
+	{
+		ImGui::OpenPopup("Choose Index");
+	}
+	if (ImGui::BeginPopup("Choose Index"))
 	{
 		auto pop = evolver.GetPopulationArray();
-		float perRow = glm::sqrt((float)evolver.GetPopulationSize());
-		float width = ImGui::GetWindowWidth();
+		float width = 500;
+		ImVec2 size = ImVec2(50, 25);
+		int xSize = width / size.x;
 		
 		for (int i = 0; i < evolver.GetPopulationSize(); i++)
 		{
-			for (int x = 0; x < perRow, i < evolver.GetPopulationSize(); x++, i++)
+			for (int x = 0; x < xSize && i < evolver.GetPopulationSize(); x++, i++)
 			{
 				if (x > 0)
 					ImGui::SameLine();
 				ImGui::PushID(i);
-				if (ImGui::Selectable(std::format("%.2f", pop[i].GetFitness()).c_str(), false, 0, ImVec2(width/ perRow, width / perRow)))
-				{
 
+				auto formatted = std::format("{:.1f}\n", pop[i].GetFitness());
+
+				float success = (pop[i].GetFitness() - minEver)/ (maxEver - minEver);
+				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1 - success, success, 0, 1.0f));
+				if (ImGui::Selectable(formatted.c_str(), false, 0, size))
+				{
+					SetCurrentSolution(i);
+					ImGui::CloseCurrentPopup();
 				}
+				ImGui::PopStyleColor();
 				ImGui::PopID();
 			}
 		}
+		ImGui::EndPopup();
 	}
+
+	ImGui::Separator();
+	ImGui::Text("Play Game");
+	if (ImGui::Button("Start"))
+	{
+		SetCurrentSolutionToPlayMode();
+	}
+	ImGui::Separator();
+	
+	if (currentSolution.running)
+		ImGui::Text("Running!");
+	else
+	{
+		beginSolutionDisabled = true;
+		ImGui::BeginDisabled();
+		ImGui::Text("Not running");
+	}
+	
+	if (ImGui::BeginTable("speed", 4, ImGuiTableFlags_NoSavedSettings | ImGuiTableFlags_Borders))
+	{
+		ImGui::TableNextColumn();
+		if (ImGui::Selectable("Pause", currentSolution.playSpeed == 0))
+		{
+			currentSolution.playSpeed = 0;
+		}
+		ImGui::TableNextColumn();
+		if (ImGui::Selectable("Play", currentSolution.playSpeed == 1))
+		{
+			currentSolution.playSpeed = 1;
+		}
+		ImGui::TableNextColumn();
+		if (ImGui::Selectable(">", currentSolution.playSpeed == 2))
+		{
+			currentSolution.playSpeed = 2;
+		}
+		ImGui::TableNextColumn();
+		if (ImGui::Selectable(">>", currentSolution.playSpeed == 3))
+		{
+			currentSolution.playSpeed = 3;
+		}
+		ImGui::EndTable();
+	}
+
+	if (currentSolution.isAI)
+	{
+		ImGui::Text("Current AI selected: #%i", currentSolution.orgIndex);
+		ImGui::Text("Fitness: %f", currentSolution.fitness);
+		ImGui::Text("Step: %i / %i", currentSolution.steps, maxSteps);
+	}
+	else
+	{
+		ImGui::Text("Manual control selected");
+		ImGui::Text("Fitness: %f", currentSolution.fitness);
+		ImGui::Text("Step: %i", currentSolution.steps, maxSteps);
+	}
+	
+	if (beginDisabled)
+		ImGui::EndDisabled();
+	if (beginSolutionDisabled)
+		ImGui::EndDisabled();
 
 	ImGui::End();
 }
@@ -293,7 +431,7 @@ void FlappyBird::StepFunction(const NetworkEvolver& evolver, NetworkOrganism& or
 	if (organism.GetStepsTaken() >= evolver.GetMaxSteps() - 1 || !organism.continueStepping)
 	{
 		//r-r-r-race condition!
-		//but this is just a progress bar so I'm not making sure its accurate at the cost of performance. it works surprisingly well given the fact it is terrible
+		//but this is just a progress bar sooo whatever it dont matter
 		ptr->progress += 1.0f / ptr->populationSize;
 	}
 
@@ -321,6 +459,81 @@ void FlappyBird::SetupStartSystem()
 	}
 }
 
+void FlappyBird::SetCurrentSolution(int organismIndex)
+{
+	const NetworkOrganism& org = evolver.GetPopulationArray()[organismIndex];
+	currentSolution.network = org.GetNetwork();
+	currentSolution.system = templateSystem;
+	currentSolution.fitness = 0;
+	currentSolution.steps = 0;
+	currentSolution.continueTimer = 0;
+	currentSolution.manualJump = false;
+	currentSolution.playSpeed = 0;
+	currentSolution.isAI = true;
+	SetNetworkInputs(currentSolution.system, currentSolution.inputs);
+	currentSolution.running = true;
+}
+
+void FlappyBird::SetCurrentSolutionToPlayMode()
+{
+	currentSolution.system = templateSystem;
+	currentSolution.fitness = 0;
+	currentSolution.steps = 0;
+	currentSolution.continueTimer = 0;
+	currentSolution.manualJump = false;
+	currentSolution.playSpeed = 0;
+	currentSolution.isAI = false;
+	currentSolution.running = true;
+}
+
+void FlappyBird::RunCurrentSolution()
+{
+	if (currentSolution.running)
+	{
+		switch (currentSolution.playSpeed)
+		{
+			//case 0 is paused
+
+		case 1: //Regular
+			currentSolution.continueTimer += deltaTime;
+			break;
+		case 2: //Faster
+			currentSolution.continueTimer += 5 * deltaTime;
+			break;
+		case 3: //Supa Fast
+			currentSolution.continueTimer += 15 * deltaTime;
+			break;
+		}
+
+		if (currentSolution.continueTimer >= TIME_STEP)
+		{
+			currentSolution.continueTimer = 0;
+
+			if (currentSolution.isAI)
+			{
+				currentSolution.network.Evaluate(currentSolution.inputs, INPUT_COUNT);
+				StepOrganism(currentSolution.system, *currentSolution.network.GetPreviousActivations(), currentSolution.fitness, currentSolution.running);
+				SetNetworkInputs(currentSolution.system, currentSolution.inputs);
+
+				currentSolution.steps++;
+				if (currentSolution.steps >= maxSteps - 1)
+				{
+					currentSolution.running = false;
+					return;
+				}
+			}
+			else
+			{
+				StepOrganism(currentSolution.system, (float)currentSolution.manualJump, currentSolution.fitness, currentSolution.running);
+				currentSolution.manualJump = false;
+				currentSolution.steps++;
+			}
+
+
+		}
+	}
+}
+
 void FlappyBird::ConfigureEvolver()
 {
 	Network network(INPUT_COUNT, nodesPerLayer, 1);
@@ -336,11 +549,21 @@ void FlappyBird::ConfigureEvolver()
 
 	SetupStartSystem();
 	evolver.SetUserPointer(this);
-	testOrganism.system = templateSystem;
+	currentSolution.system = templateSystem;
 
 	averages.clear();
 	maximums.clear();
 	minimums.clear();
 	maxEver = 100;
 	minEver = 0;
+}
+
+void FlappyBird::OnKeyPressed(GLFWwindow* window, int keycode, int scancode, int action, int mods)
+{
+	FlappyBird* ptr = (FlappyBird*)glfwGetWindowUserPointer(window);
+
+	if (ptr->currentSolution.running && !ptr->currentSolution.isAI && action == GLFW_PRESS && keycode == GLFW_KEY_SPACE)
+	{
+		ptr->currentSolution.manualJump = true;
+	}
 }
