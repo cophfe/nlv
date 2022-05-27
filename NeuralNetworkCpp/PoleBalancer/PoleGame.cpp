@@ -1,6 +1,6 @@
 #include "PoleGame.h"
 
-void FlappyBird::Run()
+void Application::Run()
 {
 	Network network(INPUT_COUNT, { 1 }, 1);
 	EvolverBuilder def = EvolverBuilder(network, StepFunction, POPULATION_SIZE, MAX_STEPS, time(0))
@@ -11,7 +11,7 @@ void FlappyBird::Run()
 		.SetElitePercent(0.02f)
 		.SetEpisodeParameters(false, true, 10U);
 	NetworkEvolver evolver = def.Build();
-	SetupStartSystem();
+	SetupDefaultSystem();
 	evolver.SetUserPointer(this);
 	evolver.EvaluateGeneration();
 
@@ -91,7 +91,7 @@ void FlappyBird::Run()
 				DrawText("HOLD X TO STOP", 25, 350, 50, WHITE);
 			}
 
-			DrawGame(systems[0], 580, 185 , 400, 400, 50);
+			DrawGame(dataPacks[0], 580, 185 , 400, 400, 50);
 			EndDrawing();
 			evolver.EvaluateGeneration();
 			testOrganism.system = templateSystem;
@@ -173,39 +173,39 @@ void FlappyBird::Run()
 	}
 }
 
-FlappyBird::FlappyBird()
+Application::Application()
 {
 	SetConfigFlags(FLAG_MSAA_4X_HINT);// | FLAG_VSYNC_HINT);
 	InitWindow(1000, 600, "Snake Test");
 	random.seed(time(0));
 }
 
-FlappyBird::~FlappyBird()
+Application::~Application()
 {
 	CloseWindow();
 }
 
-void FlappyBird::OnStartGeneration(const NetworkEvolver& evolver, NetworkOrganism* organisms)
+void Application::OnStartGeneration(const NetworkEvolver& evolver, NetworkOrganism* organisms)
 {
-	FlappyBird* ptr = (FlappyBird*)evolver.GetUserPointer();
-	ptr->SetupStartSystem();
+	Application* ptr = (Application*)evolver.GetUserPointer();
+	ptr->SetupDefaultSystem();
 	auto& ts = ptr->templateSystem;
 	
 	for (size_t i = 0; i < POPULATION_SIZE; i++)
 	{
-		ptr->systems[i] = ts;
-		SetNetworkInputs(ptr->systems[i], organisms[i].GetNetworkInputArray());
+		ptr->dataPacks[i] = ts;
+		SetNetworkInputs(ptr->dataPacks[i], organisms[i].GetNetworkInputArray());
 	}
 }
 
-void FlappyBird::StepFunction(const NetworkEvolver& evolver, NetworkOrganism& organism, int organismIndex)
+void Application::StepFunction(const NetworkEvolver& evolver, NetworkOrganism& organism, int organismIndex)
 {
-	FlappyBird* ptr = (FlappyBird*)evolver.GetUserPointer();
-	ptr->StepOrganism(ptr->systems[organismIndex], *organism.GetNetworkOutputActivations(), organism.fitness, organism.continueStepping);
-	SetNetworkInputs(ptr->systems[organismIndex], organism.GetNetworkInputArray());
+	Application* ptr = (Application*)evolver.GetUserPointer();
+	ptr->StepOrganism(ptr->dataPacks[organismIndex], *organism.GetNetworkOutputActivations(), organism.fitness, organism.continueStepping);
+	SetNetworkInputs(ptr->dataPacks[organismIndex], organism.GetNetworkInputArray());
 }
 
-void FlappyBird::SetNetworkInputs(BirdSystem& system, float* inputs)
+void Application::SetNetworkInputs(BirdSystem& system, float* inputs)
 {
 	//inputs[0] = system.time;
 	inputs[0] = system.cartPosition;
@@ -216,7 +216,7 @@ void FlappyBird::SetNetworkInputs(BirdSystem& system, float* inputs)
 	inputs[5] = system.pole2Velocity;
 }
 
-void FlappyBird::StepOrganism(BirdSystem& system, float networkOutput, float& fitness, bool& continueStepping)
+void Application::StepOrganism(BirdSystem& system, float networkOutput, float& fitness, bool& continueStepping)
 {
 	//fitness += TIME_STEP; //fitness == time
 	//fitness += (POLE_FAILURE_ANGLE - glm::abs( system.poleAngle); //just to remove the spice, the less wobbly the sticks the better
@@ -251,7 +251,7 @@ void FlappyBird::StepOrganism(BirdSystem& system, float networkOutput, float& fi
 	}
 }
 
-void FlappyBird::SetupStartSystem()
+void Application::SetupDefaultSystem()
 {
 	templateSystem.cartVelocity = 0;
 	templateSystem.cartAcceleration = 0;
@@ -267,7 +267,7 @@ void FlappyBird::SetupStartSystem()
 	//templateSystem.cartPosition = dist(random);
 }
 
-void FlappyBird::DrawGame(BirdSystem& system, short x, short y, short sizeX, short sizeY, short floorSize)
+void Application::DrawGame(BirdSystem& system, short x, short y, short sizeX, short sizeY, short floorSize)
 {
 	DrawRectangle(x, y, sizeX, sizeY, DARKGRAY);
 	unsigned short borderSize = std::min(sizeX / 100, 1);

@@ -1,6 +1,6 @@
-#include "FlappyBird.h"
+#include "Application.h"
 
-void FlappyBird::Run()
+void Application::Run()
 {
 	lastTime = std::chrono::high_resolution_clock::now();
 
@@ -27,7 +27,7 @@ void FlappyBird::Run()
 	}
 }
 
-FlappyBird::FlappyBird()
+Application::Application()
 {
 	seed = time(0);
 	
@@ -39,17 +39,29 @@ FlappyBird::FlappyBird()
 	glfwSetKeyCallback(app.GetWindow(), OnKeyPressed);
 	app.SetupImgui();
 
-	//set evolver to default
-	evolverIsSetup = true;
+	SetGame(GameType::FLAPPY_BIRD);
 	ConfigureEvolver();
+	evolverIsSetup = true;
+
 }
 
-FlappyBird::~FlappyBird()
+Application::~Application()
 {
+	if (gameSystem)
+		delete gameSystem;
+	if (dataPacks)
+	{
+		for (size_t i = 0; i < populationSize; i++)
+		{
+			delete dataPacks[i];
+		}
+		delete dataPacks;
+		dataPacks = nullptr;
+	}
 	app.UnSetup();
 }
 
-void FlappyBird::RunGeneration()
+void Application::RunGeneration()
 {
 	if (evolver.GetIsInitiated() && !evolverIsRunning)
 	{
@@ -66,7 +78,7 @@ void FlappyBird::RunGeneration()
 	}
 }
 
-void FlappyBird::DrawEvolverWindow()
+void Application::DrawEvolverWindow()
 {
 	//if  the evolver isn't setup, show setup UI
 	ImGui::Begin("Configure");
@@ -113,16 +125,7 @@ void FlappyBird::DrawEvolverWindow()
 		{
 			if (evolver.GetGeneration() == 0 || !evolver.GetIsInitiated())
 			{
-				//allow user to reconfigure evolver
-				evolver = NetworkEvolver();
-				SetupStartSystem();
-				currentSolution.system = templateSystem;
-				evolverIsSetup = false;
-				averages.clear();
-				maximums.clear();
-				minimums.clear();
-				maxEver = 100;
-				minEver = 0;
+				
 			}
 			else
 			{
@@ -136,8 +139,8 @@ void FlappyBird::DrawEvolverWindow()
 			{
 				//allow user to reconfigure evolver
 				evolver = NetworkEvolver();
-				SetupStartSystem();
-				currentSolution.system = templateSystem;
+				SetupDefaultSystem();
+				*currentSolution.dataPack = *gameSystem->GetDefaultSystem();
 				evolverIsSetup = false;
 				ImGui::CloseCurrentPopup();
 				averages.clear();
@@ -203,14 +206,14 @@ void FlappyBird::DrawEvolverWindow()
 }
 
 
-void FlappyBird::DrawDataWindow()
+void Application::DrawDataWindow()
 {
 	ImGui::Begin("Data");
 
 	ImGui::BeginDisabled(!evolverIsSetup || evolverIsRunning);
 	if (ImGui::Button("Run Generation"))
 	{
-		std::thread thread(&FlappyBird::RunGeneration, this);
+		std::thread thread(&Application::RunGeneration, this);
 		thread.detach();
 	}
 	if (!evolverIsSetup)
@@ -250,7 +253,7 @@ void FlappyBird::DrawDataWindow()
 	ImGui::End();
 }
 
-void FlappyBird::DrawPlayWindow()
+void Application::DrawPlayWindow()
 {
 	ImGui::Begin("Test");
 
@@ -380,7 +383,13 @@ void FlappyBird::DrawPlayWindow()
 	ImGui::End();
 }
 
-void FlappyBird::GetEvolverValues()
+void Application::DrawGame()
+{
+	if (currentSolution.running)
+		gameSystem->DrawGame(currentSolution.dataPack);
+}
+
+void Application::GetEvolverValues()
 {
 	float average = 0;
 	float min = 10000000000.0f;
@@ -401,32 +410,35 @@ void FlappyBird::GetEvolverValues()
 	minEver = std::min(min, minEver);
 }
 
-void FlappyBird::OnStartGeneration(const NetworkEvolver& evolver, NetworkOrganism* organisms)
+void Application::OnStartGeneration(const NetworkEvolver& evolver, NetworkOrganism* organisms)
 {
-	FlappyBird* ptr = (FlappyBird*)evolver.GetUserPointer();
-	ptr->SetupStartSystem();
-	auto& ts = ptr->templateSystem;
+	Application* ptr = (Application*)evolver.GetUserPointer();
+
+	//only set the default system once if static
+	if (!ptr->staticEpisodes || evolver.GetGeneration() == 0)
+		ptr->SetupDefaultSystem();
+	auto* ts = ptr->gameSystem->GetDefaultSystem();
 	
 	for (size_t i = 0; i < evolver.GetPopulationSize(); i++)
 	{
-		ptr->systems[i] = ts;
-		SetNetworkInputs(ptr->systems[i], organisms[i].GetNetworkInputArray());
+		*(ptr->dataPacks[i]) = *ts;
+		ptr->gameSystem->SetNetworkInputs(ptr->dataPacks[i], organisms[i].GetNetworkInputArray());
 	}
 
 	ptr->progress = 0;
 }
 
-void FlappyBird::OnEndGeneration(const NetworkEvolver& evolver, NetworkOrganism* organisms)
+void Application::OnEndGeneration(const NetworkEvolver& evolver, NetworkOrganism* organisms)
 {
-	FlappyBird* ptr = (FlappyBird*)evolver.GetUserPointer();
+	Application* ptr = (Application*)evolver.GetUserPointer();
 	ptr->progress = 1;
 }
 
-void FlappyBird::StepFunction(const NetworkEvolver& evolver, NetworkOrganism& organism, int organismIndex)
+void Application::StepFunction(const NetworkEvolver& evolver, NetworkOrganism& organism, int organismIndex)
 {
-	FlappyBird* ptr = (FlappyBird*)evolver.GetUserPointer();
-	ptr->StepOrganism(ptr->systems[organismIndex], *organism.GetNetworkOutputActivations(), organism.fitness, organism.continueStepping);
-	SetNetworkInputs(ptr->systems[organismIndex], organism.GetNetworkInputArray());
+	Application* ptr = (Application*)evolver.GetUserPointer();
+	ptr->gameSystem->StepOrganism(ptr->dataPacks[organismIndex], organism.GetNetworkOutputActivations(), organism.fitness, organism.continueStepping);
+	ptr->gameSystem->SetNetworkInputs(ptr->dataPacks[organismIndex], organism.GetNetworkInputArray());
 
 	if (organism.GetStepsTaken() >= evolver.GetMaxSteps() - 1 || !organism.continueStepping)
 	{
@@ -437,56 +449,39 @@ void FlappyBird::StepFunction(const NetworkEvolver& evolver, NetworkOrganism& or
 
 }
 
-void FlappyBird::SetNetworkInputs(BirdSystem& system, float* inputs)
+void Application::SetupDefaultSystem()
 {
-	
+	gameSystem->SetDefaultSystem(random);
 }
 
-void FlappyBird::StepOrganism(BirdSystem& system, float networkOutput, float& fitness, bool& continueStepping)
-{
-	fitness += 0.02f;
-}
-
-void FlappyBird::SetupStartSystem()
-{
-	if (staticEpisodes)
-	{
-
-	}
-	else
-	{
-
-	}
-}
-
-void FlappyBird::SetCurrentSolution(int organismIndex)
+void Application::SetCurrentSolution(int organismIndex)
 {
 	const NetworkOrganism& org = evolver.GetPopulationArray()[organismIndex];
 	currentSolution.network = org.GetNetwork();
-	currentSolution.system = templateSystem;
+	*currentSolution.dataPack = *gameSystem->GetDefaultSystem();
 	currentSolution.fitness = 0;
 	currentSolution.steps = 0;
 	currentSolution.continueTimer = 0;
-	currentSolution.manualJump = false;
+	//change to set 
 	currentSolution.playSpeed = 0;
 	currentSolution.isAI = true;
-	SetNetworkInputs(currentSolution.system, currentSolution.inputs);
+	gameSystem->SetNetworkInputs(currentSolution.dataPack, currentSolution.inputs);
 	currentSolution.running = true;
 }
 
-void FlappyBird::SetCurrentSolutionToPlayMode()
+void Application::SetCurrentSolutionToPlayMode()
 {
-	currentSolution.system = templateSystem;
+	*currentSolution.dataPack = *gameSystem->GetDefaultSystem();
 	currentSolution.fitness = 0;
 	currentSolution.steps = 0;
 	currentSolution.continueTimer = 0;
-	currentSolution.manualJump = false;
+	gameSystem->ResetManualOutput();
 	currentSolution.playSpeed = 0;
 	currentSolution.isAI = false;
 	currentSolution.running = true;
 }
 
-void FlappyBird::RunCurrentSolution()
+void Application::RunCurrentSolution()
 {
 	if (currentSolution.running)
 	{
@@ -512,8 +507,8 @@ void FlappyBird::RunCurrentSolution()
 			if (currentSolution.isAI)
 			{
 				currentSolution.network.Evaluate(currentSolution.inputs, INPUT_COUNT);
-				StepOrganism(currentSolution.system, *currentSolution.network.GetPreviousActivations(), currentSolution.fitness, currentSolution.running);
-				SetNetworkInputs(currentSolution.system, currentSolution.inputs);
+				gameSystem->StepOrganism(currentSolution.dataPack, currentSolution.network.GetPreviousActivations(), currentSolution.fitness, currentSolution.running);
+				gameSystem->SetNetworkInputs(currentSolution.dataPack, currentSolution.inputs);
 
 				currentSolution.steps++;
 				if (currentSolution.steps >= maxSteps - 1)
@@ -524,8 +519,9 @@ void FlappyBird::RunCurrentSolution()
 			}
 			else
 			{
-				StepOrganism(currentSolution.system, (float)currentSolution.manualJump, currentSolution.fitness, currentSolution.running);
-				currentSolution.manualJump = false;
+				//instead of using neural network output, use output set by the gameSystem based on keyboard callbacks
+				gameSystem->StepOrganism(currentSolution.dataPack, gameSystem->GetManualOutput().data(), currentSolution.fitness, currentSolution.running);
+				gameSystem->ResetManualOutput();
 				currentSolution.steps++;
 			}
 
@@ -534,7 +530,7 @@ void FlappyBird::RunCurrentSolution()
 	}
 }
 
-void FlappyBird::ConfigureEvolver()
+void Application::ConfigureEvolver()
 {
 	Network network(INPUT_COUNT, nodesPerLayer, 1);
 	EvolverBuilder def = EvolverBuilder(network, StepFunction, populationSize, maxSteps, seed)
@@ -545,11 +541,14 @@ void FlappyBird::ConfigureEvolver()
 		.SetElitePercent(elitePercent)
 		.SetEpisodeParameters(staticEpisodes, multithread, THREAD_COUNT);
 	evolver = def.Build();
-	systems = std::vector<BirdSystem>(populationSize);
-
-	SetupStartSystem();
+	dataPacks = new GameSystem::DataPack*[populationSize];
+	for (size_t i = 0; i < populationSize; i++)
+	{
+		dataPacks[i] = new GameSystem::DataPack();
+	}
+	SetupDefaultSystem();
 	evolver.SetUserPointer(this);
-	currentSolution.system = templateSystem;
+	*currentSolution.dataPack = *gameSystem->GetDefaultSystem();
 
 	averages.clear();
 	maximums.clear();
@@ -558,12 +557,65 @@ void FlappyBird::ConfigureEvolver()
 	minEver = 0;
 }
 
-void FlappyBird::OnKeyPressed(GLFWwindow* window, int keycode, int scancode, int action, int mods)
+void Application::ClearEvolver()
 {
-	FlappyBird* ptr = (FlappyBird*)glfwGetWindowUserPointer(window);
-
-	if (ptr->currentSolution.running && !ptr->currentSolution.isAI && action == GLFW_PRESS && keycode == GLFW_KEY_SPACE)
+	//allow user to reconfigure evolver
+	evolver = NetworkEvolver();
+	evolverIsSetup = false;
+	averages.clear();
+	maximums.clear();
+	minimums.clear();
+	maxEver = 100;
+	minEver = 0;
+	currentSolution.running = false;
+	if (dataPacks)
 	{
-		ptr->currentSolution.manualJump = true;
+		for (size_t i = 0; i < populationSize; i++)
+		{
+			delete dataPacks[i];
+		}
+		delete dataPacks;
+		dataPacks = nullptr;
+	}
+}
+
+void Application::SetGame(GameType type)
+{
+	gameType = type;
+	if (gameSystem)
+		delete gameSystem;
+
+	switch (type)
+	{
+	case Application::GameType::FLAPPY_BIRD:
+	{
+		
+		gameSystem = new FlappyBirdSystem();
+	}
+		break;
+	case Application::GameType::POLE_BALANCER:
+	{
+
+	}
+		break;
+	case Application::GameType::SNAKE:
+	{
+
+	}
+		break;
+	}
+
+	ClearEvolver();
+	nodesPerLayer = { gameSystem->GetDefaultHiddenNodes() };
+
+}
+
+void Application::OnKeyPressed(GLFWwindow* window, int keycode, int scancode, int action, int mods)
+{
+	Application* ptr = (Application*)glfwGetWindowUserPointer(window);
+
+	if (ptr->currentSolution.running && !ptr->currentSolution.isAI)
+	{
+		ptr->gameSystem->OnKeyPressed(window, keycode, action);
 	}
 }

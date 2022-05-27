@@ -44,25 +44,25 @@ struct BirdSystem
 	float cartAcceleration;
 };
 
-class FlappyBird
+class Application
 {
 public:
 	void Run();
-	FlappyBird();
-	~FlappyBird();
+	Application();
+	~Application();
 private:
 	static void OnStartGeneration(const NetworkEvolver& evolver, NetworkOrganism* organisms);
 	static void StepFunction(const NetworkEvolver& evolver, NetworkOrganism& organism, int organismIndex);
 	static void SetNetworkInputs(BirdSystem& system, float* inputs);
 	void StepOrganism(BirdSystem& system, float networkOutput, float& fitness, bool& continueStepping);
-	void SetupStartSystem();
+	void SetupDefaultSystem();
 	void DrawGame(BirdSystem& system, short x, short y, short sizeX, short sizeY, short floorSize);
 
 	BirdSystem templateSystem;
 	std::minstd_rand random;
 	std::normal_distribution<float> dist = std::normal_distribution<float>(0, 0.03f);
 	std::uniform_int_distribution<short> indexDist = std::uniform_int_distribution<short>(0, POPULATION_SIZE - 1);
-	BirdSystem systems[POPULATION_SIZE];
+	BirdSystem dataPacks[POPULATION_SIZE];
 	float deltaTime;		
 	std::chrono::high_resolution_clock::time_point lastTime;
 };

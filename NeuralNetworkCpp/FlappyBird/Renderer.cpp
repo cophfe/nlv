@@ -27,6 +27,8 @@ void Renderer::SetupWindow(GLuint width, GLuint height, const char* title)
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
+
+	//now setup 
 }
 
 void Renderer::SetupImgui()
@@ -68,4 +70,9 @@ void Renderer::UnSetup()
 	ImGui_ImplGlfw_Shutdown();
 	ImGui::DestroyContext();
 	glfwTerminate();
+}
+
+void Renderer::DrawSprite(Texture* texture, glm::vec2 position, float width, float height, float rotation, glm::vec2 pivot)
+{
+	//calculate vertex positions
 }

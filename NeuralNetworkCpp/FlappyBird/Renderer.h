@@ -9,6 +9,7 @@
 #include "Texture.h"
 
 //this is just a basic renderer literally made for flappy bird
+//yeeah no batching or nothing, it really sucks
 class Renderer
 {
 public:
@@ -18,9 +19,7 @@ public:
 	void EndFrame();
 	void UnSetup();
 
-	//aie bootstrap renderer eat your heart out
-	void DrawSprite(Texture* texture, glm::vec2 position, float width, float height, float rotation = 0.0f, glm::vec2 pivot = glm::vec2(0.5f, 0.5f), float depth = 0.0f);
-
+	void DrawSprite(Texture* texture, glm::vec2 position, float width, float height, float rotation = 0.0f, glm::vec2 pivot = glm::vec2(0.5f, 0.5f));
 
 	struct Camera
 	{
@@ -32,18 +31,23 @@ public:
 	} camera;
 
 	static constexpr int BATCH_SIZE = 50;
-	inline Camera& GetCamera() { return camera; }
+	inline const Camera& GetCamera() { return camera; }
 	inline GLFWwindow* GetWindow() { return window; }
+
+	//also updates the projection matrix
+	inline void SetCameraRotation(float rotation);
+	inline void SetCameraPosition(glm::vec2 position);
+	inline void SetCameraScale(float scale);
 
 private:
 	
 	GLFWwindow* window;
 
-	//for sprite quads
-	glm::vec3 vertex[BATCH_SIZE * 4];
-	glm::vec2 indices[BATCH_SIZE * 6]
+	//quad mesh data
 	GLuint vertexArray;
 	GLuint vertexBuffer;
 	GLuint elementBuffer;
+	//shader program id
+	GLuint shaderID;
 };
 

@@ -166,15 +166,18 @@
     <ClCompile Include="..\dependencies\imgui\implot.cpp" />
     <ClCompile Include="..\dependencies\imgui\implot_demo.cpp" />
     <ClCompile Include="..\dependencies\imgui\implot_items.cpp" />
+    <ClCompile Include="FlappyBirdSystem.cpp" />
     <ClCompile Include="Renderer.cpp" />
-    <ClCompile Include="FlappyBird.cpp" />
+    <ClCompile Include="Application.cpp" />
     <ClCompile Include="Source.cpp" />
     <ClCompile Include="Texture.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="FlappyBirdSystem.h" />
+    <ClInclude Include="GameSystem.h" />
     <ClInclude Include="Graphics.h" />
     <ClInclude Include="Renderer.h" />
-    <ClInclude Include="FlappyBird.h" />
+    <ClInclude Include="Application.h" />
     <ClInclude Include="stb_image.h" />
     <ClInclude Include="Texture.h" />
   </ItemGroup>
