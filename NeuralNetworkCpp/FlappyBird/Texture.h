@@ -38,6 +38,7 @@ public:
 
 	bool Load(const char* filename, TextureFormat format = TextureFormat::Auto);
 	void Unload();
+	void Bind(GLuint unit = 0) const;
 
 	void SetFiltering(TextureFiltering filtering);
 	void SetWrapMode(TextureWrapMode wrapmode);
@@ -49,6 +50,7 @@ public:
 	inline TextureWrapMode GetWrapMode() const { return wrapMode; }
 	inline int GetWidth() const { return width; }
 	inline int GetHeight() const { return height; }
+
 private:
 	std::string filename;
 	GLuint id;

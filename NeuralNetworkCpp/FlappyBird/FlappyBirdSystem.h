@@ -1,5 +1,7 @@
 #pragma once
 #include "GameSystem.h"
+#include "glm.hpp"
+#include "Renderer.h"
 
 class FlappyBirdSystem : public GameSystem
 {
@@ -9,10 +11,15 @@ public:
 	static constexpr float BAR_MIN_HEIGHT = 0.3f;
 	static constexpr float BAR_MAX_HEIGHT = 1.0f;
 	static constexpr float SPACE_MAX_HEIGHT = 0.6f;
-	static constexpr float SPACE_MIN_HEIGHT = 0.3f;
+	static constexpr float SPACE_MIN_HEIGHT = 0.35f;
+	static constexpr float BAR_HALF_WIDTH = 0.3f;
+	static constexpr float SCREEN_HALF_WIDTH = 5.0f;
+	static constexpr float BAR_DISTANCE = 4.0f;
 	static constexpr float JUMP_FORCE = 5.0f;
+	static constexpr float SCREEN_HALF_HEIGHT = 1.0f;
+	static constexpr float BIRD_RADIUS = 0.25f;
 
-	static constexpr int INPUT_NODES = 6;
+	static constexpr int INPUT_NODES = 5;
 	static constexpr int DEFAULT_HIDDEN_NODES = 6;
 	static constexpr int OUTPUT_NODES = 1;
 	FlappyBirdSystem();
@@ -20,7 +27,12 @@ public:
 
 	struct FlappyBirdDataPack : public DataPack 
 	{
-
+		float yVelocity;
+		float yPos;
+		float barXPos;
+		float barHeight;
+		float spaceHeight;
+		std::minstd_rand random;
 	};
 
 	// Inherited via GameSystem
@@ -34,7 +46,7 @@ public:
 
 	virtual void OnKeyPressed(GLFWwindow* window, int keycode, int action) override;
 
-	virtual void DrawGame(DataPack* data) override;
+	virtual void DrawGame(DataPack* data, Renderer& renderer) override;
 
 	virtual int GetInputCount() override { return INPUT_NODES; }
 	virtual int GetOutputCount() override { return OUTPUT_NODES; }
@@ -43,5 +55,6 @@ public:
 private:
 	FlappyBirdDataPack defaultDataPack;
 
+	Texture bird;
 };
 

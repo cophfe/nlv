@@ -72,7 +72,11 @@ void Renderer::UnSetup()
 	glfwTerminate();
 }
 
-void Renderer::DrawSprite(Texture* texture, glm::vec2 position, float width, float height, float rotation, glm::vec2 pivot)
+void Renderer::DrawSprite(Texture* texture, glm::vec2 position, float width, float height, float rotation, glm::vec4 colour, glm::vec2 pivot)
 {
 	//calculate vertex positions
+}
+
+void Renderer::DrawBox(glm::vec2 position, float width, float height, float rotation, glm::vec4 colour, glm::vec2 pivot)
+{
 }

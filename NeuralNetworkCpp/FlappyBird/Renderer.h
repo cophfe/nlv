@@ -19,7 +19,8 @@ public:
 	void EndFrame();
 	void UnSetup();
 
-	void DrawSprite(Texture* texture, glm::vec2 position, float width, float height, float rotation = 0.0f, glm::vec2 pivot = glm::vec2(0.5f, 0.5f));
+	void DrawSprite(Texture* texture, glm::vec2 position, float width, float height, float rotation = 0.0f, glm::vec4 colour = glm::vec4(1, 1, 1, 1), glm::vec2 pivot = glm::vec2(0.5f, 0.5f));
+	void DrawBox(glm::vec2 position, float width, float height, float rotation = 0.0f, glm::vec4 colour = glm::vec4(1, 1, 1, 1), glm::vec2 pivot = glm::vec2(0.5f, 0.5f));
 
 	struct Camera
 	{

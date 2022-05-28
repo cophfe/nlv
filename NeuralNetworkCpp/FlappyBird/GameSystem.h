@@ -3,6 +3,8 @@
 #include <vector>
 #include "NetworkEvolver.h"
 
+constexpr float TIME_STEP = 1.0f / 50.0f;
+
 class GameSystem
 {
 public:
@@ -28,7 +30,7 @@ public:
 	//for setting manual control (only called when manual control is used)
 	virtual void OnKeyPressed(GLFWwindow* window, int keycode, int action) = 0;
 	//called in the middle of drawing
-	virtual void DrawGame(DataPack* data) = 0;
+	virtual void DrawGame(DataPack* data, Renderer& renderer) = 0;
 
 	inline std::vector<float>& GetManualOutput() { return manualOutput; }
 	virtual DataPack* GetDefaultSystem() = 0;

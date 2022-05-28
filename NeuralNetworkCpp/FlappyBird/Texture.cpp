@@ -87,13 +87,23 @@ void Texture::Unload()
 	loaded = false;
 	width = 0;
 	height = 0;
+	id = 0;
+}
+
+void Texture::Bind(GLuint unit) const
+{
+	if (!loaded)
+		return;
+
+	glActiveTexture(GL_TEXTURE0 + unit);
+	glBindTexture(GL_TEXTURE_2D, id);
 }
 
 void Texture::SetFiltering(TextureFiltering filtering)
 {
 	if (!loaded) 
 		return;
-	glBindTexture(GL_TEXTURE_2D, id);
+	Bind();
 
 	this->filtering = filtering;
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (GLenum)filtering);
@@ -104,8 +114,7 @@ void Texture::SetWrapMode(TextureWrapMode wrapmode)
 {
 	if (!loaded)
 		return;
-
-	glBindTexture(GL_TEXTURE_2D, id);
+	Bind();
 
 	this->wrapMode = wrapMode;
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, (GLenum)wrapMode);

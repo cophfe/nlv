@@ -20,7 +20,6 @@ typedef glm::vec2 Vec2;
 constexpr int INPUT_COUNT = 6;
 constexpr int THREAD_COUNT = 10;
 
-constexpr float TIME_STEP = 1.0f / 50.0f;
 constexpr int DEFAULT_HIDDEN_NODES = 6;
 constexpr int DEFAULT_POPULATION = 1000;
 constexpr float DEFAULT_MAX_TIME = 60;
