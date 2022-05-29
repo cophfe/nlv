@@ -19,8 +19,8 @@ public:
 	void EndFrame();
 	void UnSetup();
 
-	void DrawSprite(Texture* texture, glm::vec2 position, float width, float height, float rotation = 0.0f, glm::vec4 colour = glm::vec4(1, 1, 1, 1), glm::vec2 pivot = glm::vec2(0.5f, 0.5f));
-	void DrawBox(glm::vec2 position, float width, float height, float rotation = 0.0f, glm::vec4 colour = glm::vec4(1, 1, 1, 1), glm::vec2 pivot = glm::vec2(0.5f, 0.5f));
+	void DrawSprite(Texture* texture, glm::vec2 position, float width, float height, float rotation = 0.0f, glm::vec3 colour = glm::vec3(1, 1, 1), glm::vec2 pivot = glm::vec2(0.5f, 0.5f));
+	void DrawBox(glm::vec2 position, float width, float height, float rotation = 0.0f, glm::vec3 colour = glm::vec3(1, 1, 1), glm::vec2 pivot = glm::vec2(0.5f, 0.5f));
 
 	struct Camera
 	{
@@ -29,7 +29,8 @@ public:
 		float scale;
 	private:
 		glm::mat4x4 projection;
-	} camera;
+		glm::mat4x4 view;
+	};
 
 	static constexpr int BATCH_SIZE = 50;
 	inline const Camera& GetCamera() { return camera; }
@@ -43,12 +44,15 @@ public:
 private:
 	
 	GLFWwindow* window;
+	Camera camera;
 
+	Texture defaultTexture;
 	//quad mesh data
 	GLuint vertexArray;
 	GLuint vertexBuffer;
 	GLuint elementBuffer;
 	//shader program id
 	GLuint shaderID;
+	
 };
 

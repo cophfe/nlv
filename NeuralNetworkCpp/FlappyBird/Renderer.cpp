@@ -28,7 +28,66 @@ void Renderer::SetupWindow(GLuint width, GLuint height, const char* title)
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
 
-	//now setup 
+	//now setup shader
+	GLuint fragment = glCreateShader(GL_FRAGMENT_SHADER);
+	const char* fragmentString =
+		R"(
+#version 460 core
+in vec2 TexCoord;
+out vec4 Colour;
+uniform sampler2D _Texture;
+uniform vec3 _Colour;
+void main()
+{
+    Colour = vec4(_Colour, 1.0) * texture(_Texture, TexCoord);
+})";
+	glShaderSource(fragment, 1, &fragmentString, nullptr);
+	glCompileShader(fragment);
+
+	GLuint vertex = glCreateShader(GL_VERTEX_SHADER);
+	const char* vertexString =
+		R"(
+#version 460 core
+layout (location = 0) in vec2 position;
+
+out vec2 TexCoord;
+uniform mat4 _Model;
+uniform mat4 _ViewProjection;
+void main()
+{
+	TexCoord = position;
+	gl_Position = _ViewProjection * (_Model * vec4(position, 1.0, 1.0));
+})";
+	glShaderSource(vertex, 1, &vertexString, nullptr);
+	glCompileShader(vertex);
+	shaderID = glCreateProgram();
+	glAttachShader(shaderID, vertex);
+	glAttachShader(shaderID, fragment);
+	glLinkProgram(shaderID);
+	//and now quad
+	glGenVertexArrays(1, &vertexArray);
+	glBindVertexArray(vertexArray);
+	glGenBuffers(1, &vertexBuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+	glm::vec2 vertices[4] = {
+		{0, 0},
+		{1, 0},
+		{1, 1},
+		{0, 1}
+	};
+	//both local pos and uv data
+	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * 4, (void*)vertices, GL_STATIC_DRAW);
+	int indices[6] = {
+		0, 1, 2,
+		0, 2, 3
+	};
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuffer);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(int), (void*)indices, GL_STATIC_DRAW);
+	//define position
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
+	glEnableVertexAttribArray(0);
+
+	defaultTexture.Load("white.png");
 }
 
 void Renderer::SetupImgui()
@@ -53,7 +112,6 @@ void Renderer::StartFrame()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	ImGuiIO& io = ImGui::GetIO();
 	glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
-
 }
 
 void Renderer::EndFrame()
@@ -72,11 +130,28 @@ void Renderer::UnSetup()
 	glfwTerminate();
 }
 
-void Renderer::DrawSprite(Texture* texture, glm::vec2 position, float width, float height, float rotation, glm::vec4 colour, glm::vec2 pivot)
+void Renderer::DrawSprite(Texture* texture, glm::vec2 position, float width, float height, float rotation, glm::vec3 colour, glm::vec2 pivot)
 {
-	//calculate vertex positions
+	//set colour
+	glUniform3f(glGetUniformLocation(shaderID, "_Colour"), colour.x, colour.y, colour.z);
+	//calculate matrix
+	
 }
 
-void Renderer::DrawBox(glm::vec2 position, float width, float height, float rotation, glm::vec4 colour, glm::vec2 pivot)
+void Renderer::DrawBox(glm::vec2 position, float width, float height, float rotation, glm::vec3 colour, glm::vec2 pivot)
+{
+	DrawSprite(&defaultTexture, position, width, height, rotation, colour, pivot);
+}
+
+inline void Renderer::SetCameraRotation(float rotation)
+{
+	camera.
+}
+
+inline void Renderer::SetCameraPosition(glm::vec2 position)
+{
+}
+
+inline void Renderer::SetCameraScale(float scale)
 {
 }
