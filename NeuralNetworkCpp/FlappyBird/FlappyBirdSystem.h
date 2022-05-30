@@ -1,7 +1,6 @@
 #pragma once
 #include "GameSystem.h"
 #include "glm.hpp"
-#include "Renderer.h"
 
 class FlappyBirdSystem : public GameSystem
 {
@@ -48,10 +47,12 @@ public:
 
 	virtual void DrawGame(DataPack* data, Renderer& renderer) override;
 
-	virtual int GetInputCount() override { return INPUT_NODES; }
-	virtual int GetOutputCount() override { return OUTPUT_NODES; }
-	virtual int GetDefaultHiddenNodes() override { return DEFAULT_HIDDEN_NODES; }
-	virtual DataPack* GetDefaultSystem() override { return &defaultDataPack; }
+	virtual DataPack* NewDataPack() const override;
+
+	virtual int GetInputCount() const override { return INPUT_NODES; }
+	virtual int GetOutputCount() const override { return OUTPUT_NODES; }
+	virtual int GetDefaultHiddenNodes() const override { return DEFAULT_HIDDEN_NODES; }
+	virtual DataPack* GetDefaultDataPack() override { return &defaultDataPack; }
 private:
 	FlappyBirdDataPack defaultDataPack;
 

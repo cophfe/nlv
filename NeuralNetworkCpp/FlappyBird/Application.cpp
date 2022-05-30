@@ -4,9 +4,9 @@ void Application::Run()
 {
 	lastTime = std::chrono::high_resolution_clock::now();
 
-	while (!glfwWindowShouldClose(app.GetWindow()))
+	while (!glfwWindowShouldClose(renderer.GetWindow()))
 	{
-		app.StartFrame();
+		renderer.StartFrame();
 		{
 			//poll
 			glfwPollEvents();
@@ -22,8 +22,11 @@ void Application::Run()
 
 			//Run solution
 			RunCurrentSolution();
+
+			//Draw game
+			DrawGame();
 		}
-		app.EndFrame();
+		renderer.EndFrame();
 	}
 }
 
@@ -34,10 +37,12 @@ Application::Application()
 	random.seed(seed);
 
 	//setup rendering and callbacks
-	app.SetupWindow(1000, 700, "hello there");
-	glfwSetWindowUserPointer(app.GetWindow(), this);
-	glfwSetKeyCallback(app.GetWindow(), OnKeyPressed);
-	app.SetupImgui();
+	renderer.SetupWindow(1000, 700, "hello there");
+	glfwSetWindowUserPointer(renderer.GetWindow(), this);
+	glfwSetKeyCallback(renderer.GetWindow(), OnKeyPressed);
+	renderer.SetupImgui();
+
+	renderer.SetCameraSize(10.0f);
 
 	SetGame(GameType::FLAPPY_BIRD);
 	ConfigureEvolver();
@@ -58,7 +63,7 @@ Application::~Application()
 		delete dataPacks;
 		dataPacks = nullptr;
 	}
-	app.UnSetup();
+	renderer.UnSetup();
 }
 
 void Application::RunGeneration()
@@ -106,8 +111,28 @@ void Application::DrawEvolverWindow()
 	if (ImGui::Button("Reset to default"))
 	{
 		hiddenLayers = 1;
-		nodesPerLayer = { DEFAULT_HIDDEN_NODES };
+		nodesPerLayer = { gameSystem->GetDefaultHiddenNodes()};
 		populationSize = DEFAULT_POPULATION;
+		maxTime = DEFAULT_MAX_TIME;
+		maxSteps = DEFAULT_MAX_TIME / TIME_STEP;
+		elitePercent = DEFAULT_ELITE;
+		multithread = DEFAULT_THREADED;
+		staticEpisodes = DEFAULT_STATIC;
+		mutationType = 0;
+		crossoverType = 0;
+		selectionType = 0;
+		mutationRate = DEFAULT_MUTATION_RATE;
+
+		ClearEvolver();
+		ConfigureEvolver();
+		evolver.SetStaticEpisodes(staticEpisodes);
+		evolver.SetIsThreadedEpisodes(multithread);
+		evolver.SetMaxSteps(maxSteps);
+		evolver.SetElitePercent(elitePercent);
+		evolver.SetMutationRate(mutationRate);
+		evolver.SetMutationType((EvolverMutationType)mutationType);
+		evolver.SetCrossoverType((EvolverCrossoverType)crossoverType);
+		evolver.SetSelectionType((EvolverSelectionType)selectionType);
 	}
 	ImGui::Spacing();
 
@@ -125,7 +150,7 @@ void Application::DrawEvolverWindow()
 		{
 			if (evolver.GetGeneration() == 0 || !evolver.GetIsInitiated())
 			{
-				
+				ClearEvolver();
 			}
 			else
 			{
@@ -140,13 +165,13 @@ void Application::DrawEvolverWindow()
 				//allow user to reconfigure evolver
 				evolver = NetworkEvolver();
 				SetupDefaultSystem();
-				*currentSolution.dataPack = *gameSystem->GetDefaultSystem();
+				*currentSolution.dataPack = *gameSystem->GetDefaultDataPack();
 				evolverIsSetup = false;
 				ImGui::CloseCurrentPopup();
 				averages.clear();
 				maximums.clear();
 				minimums.clear();
-				maxEver = 100;
+				maxEver = 0;
 				minEver = 0;
 			}
 			ImGui::SameLine();
@@ -187,22 +212,24 @@ void Application::DrawEvolverWindow()
 			evolver.SetElitePercent(elitePercent);
 		}
 		//Mutation
+		if (ImGui::Combo("Mutation Type", &mutationType, "Set\0Add\0\0"))
+			evolver.SetMutationType((EvolverMutationType)mutationType);
+		ImGui::SameLine();
+		if (ImGui::SliderFloat("Mutation Rate", &mutationRate, 0, 1, "%0.2f"))
+			evolver.SetMutationRate(mutationRate);
 		//Crossover
+		if (ImGui::Combo("Crossover Type", &crossoverType, "Proportional\0Ranked\0Tournament\0\0"))
+			evolver.SetCrossoverType((EvolverCrossoverType)crossoverType);
 		//Selection
-
-		if (ImGui::Button("Reset to default"))
-		{
-			maxTime = DEFAULT_MAX_TIME;
-			maxSteps = DEFAULT_MAX_TIME / TIME_STEP;
-			elitePercent = DEFAULT_ELITE;
-			multithread = DEFAULT_THREADED;
-			staticEpisodes = DEFAULT_STATIC;
-		}
+		if (ImGui::Combo("Selection Type", &selectionType, "Uniform\0Point\0TwoPoint\0Arithmetic\0ArithmeticProportional\0\0"))
+			evolver.SetSelectionType((EvolverSelectionType)selectionType);
 
 	}
 	if (disabledWhileRunning)
 		ImGui::EndDisabled();
 	ImGui::End();
+
+	ImGui::ShowDemoWindow();
 }
 
 
@@ -386,7 +413,7 @@ void Application::DrawPlayWindow()
 void Application::DrawGame()
 {
 	if (currentSolution.running)
-		gameSystem->DrawGame(currentSolution.dataPack);
+		gameSystem->DrawGame(currentSolution.dataPack, renderer);
 }
 
 void Application::GetEvolverValues()
@@ -406,8 +433,8 @@ void Application::GetEvolverValues()
 	averages.push_back(average);
 	maximums.push_back(max);
 	minimums.push_back(min);
-	maxEver = std::max(max, maxEver);
-	minEver = std::min(min, minEver);
+	maxEver = std::max(max + 1, maxEver);
+	minEver = std::min(min - 1, minEver);
 }
 
 void Application::OnStartGeneration(const NetworkEvolver& evolver, NetworkOrganism* organisms)
@@ -417,7 +444,7 @@ void Application::OnStartGeneration(const NetworkEvolver& evolver, NetworkOrgani
 	//only set the default system once if static
 	if (!ptr->staticEpisodes || evolver.GetGeneration() == 0)
 		ptr->SetupDefaultSystem();
-	auto* ts = ptr->gameSystem->GetDefaultSystem();
+	auto* ts = ptr->gameSystem->GetDefaultDataPack();
 	
 	for (size_t i = 0; i < evolver.GetPopulationSize(); i++)
 	{
@@ -458,7 +485,7 @@ void Application::SetCurrentSolution(int organismIndex)
 {
 	const NetworkOrganism& org = evolver.GetPopulationArray()[organismIndex];
 	currentSolution.network = org.GetNetwork();
-	*currentSolution.dataPack = *gameSystem->GetDefaultSystem();
+	*currentSolution.dataPack = *gameSystem->GetDefaultDataPack();
 	currentSolution.fitness = 0;
 	currentSolution.steps = 0;
 	currentSolution.continueTimer = 0;
@@ -471,7 +498,7 @@ void Application::SetCurrentSolution(int organismIndex)
 
 void Application::SetCurrentSolutionToPlayMode()
 {
-	*currentSolution.dataPack = *gameSystem->GetDefaultSystem();
+	*currentSolution.dataPack = *gameSystem->GetDefaultDataPack();
 	currentSolution.fitness = 0;
 	currentSolution.steps = 0;
 	currentSolution.continueTimer = 0;
@@ -542,18 +569,20 @@ void Application::ConfigureEvolver()
 		.SetEpisodeParameters(staticEpisodes, multithread, THREAD_COUNT);
 	evolver = def.Build();
 	dataPacks = new GameSystem::DataPack*[populationSize];
+	
 	for (size_t i = 0; i < populationSize; i++)
 	{
-		dataPacks[i] = new GameSystem::DataPack();
+		dataPacks[i] = gameSystem->NewDataPack();
 	}
 	SetupDefaultSystem();
 	evolver.SetUserPointer(this);
-	*currentSolution.dataPack = *gameSystem->GetDefaultSystem();
+	
+	*currentSolution.dataPack = *gameSystem->GetDefaultDataPack();
 
 	averages.clear();
 	maximums.clear();
 	minimums.clear();
-	maxEver = 100;
+	maxEver = 0;
 	minEver = 0;
 }
 
@@ -565,7 +594,7 @@ void Application::ClearEvolver()
 	averages.clear();
 	maximums.clear();
 	minimums.clear();
-	maxEver = 100;
+	maxEver = 0;
 	minEver = 0;
 	currentSolution.running = false;
 	if (dataPacks)
@@ -584,26 +613,20 @@ void Application::SetGame(GameType type)
 	gameType = type;
 	if (gameSystem)
 		delete gameSystem;
+	if (currentSolution.dataPack)
+		delete currentSolution.dataPack;
 
 	switch (type)
 	{
+	case Application::GameType::SNAKE:
+	case Application::GameType::POLE_BALANCER:
 	case Application::GameType::FLAPPY_BIRD:
 	{
-		
 		gameSystem = new FlappyBirdSystem();
 	}
 		break;
-	case Application::GameType::POLE_BALANCER:
-	{
-
 	}
-		break;
-	case Application::GameType::SNAKE:
-	{
-
-	}
-		break;
-	}
+	currentSolution.dataPack = gameSystem->NewDataPack();
 
 	ClearEvolver();
 	nodesPerLayer = { gameSystem->GetDefaultHiddenNodes() };

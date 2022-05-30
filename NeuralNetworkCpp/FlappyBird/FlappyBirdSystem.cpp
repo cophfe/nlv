@@ -91,4 +91,10 @@ void FlappyBirdSystem::OnKeyPressed(GLFWwindow* window, int keycode, int action)
 void FlappyBirdSystem::DrawGame(DataPack* data, Renderer& renderer)
 {
 	//renderer.DrawSprite(&bird, )
+	renderer.DrawBox(glm::vec2(0, 0), 0.2f, 0.2f, 10.0f, glm::vec3(1, 0, 0));
+}
+
+GameSystem::DataPack* FlappyBirdSystem::NewDataPack() const
+{
+	return new FlappyBirdDataPack();
 }

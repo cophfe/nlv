@@ -26,6 +26,7 @@ constexpr float DEFAULT_MAX_TIME = 60;
 constexpr float DEFAULT_ELITE = 0.05f;
 constexpr bool DEFAULT_THREADED = false;
 constexpr bool DEFAULT_STATIC = false;
+constexpr bool DEFAULT_MUTATION_RATE = 0.2f;
 
 class Application
 {
@@ -52,7 +53,7 @@ private:
 	void ConfigureEvolver();
 	void ClearEvolver();
 
-	Renderer app;
+	Renderer renderer;
 	NetworkEvolver evolver;
 	GameSystem* gameSystem = nullptr;
 	std::minstd_rand random;
@@ -80,7 +81,10 @@ private:
 	float elitePercent = DEFAULT_ELITE;
 	bool multithread = DEFAULT_THREADED;
 	bool staticEpisodes = DEFAULT_STATIC;
-
+	float mutationRate = DEFAULT_MUTATION_RATE;
+	int mutationType = 0;
+	int selectionType = 0;
+	int crossoverType = 0;
 	float timeToComplete = 0;
 	float progress = 0;
 	bool evolverIsRunning = false;

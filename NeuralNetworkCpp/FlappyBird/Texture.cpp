@@ -23,6 +23,7 @@ bool Texture::Load(const char* filename, TextureFormat format)
 {
 	Unload();
 	
+	this->filename = filename;
 	int reqChannels;
 	switch (format)
 	{
@@ -88,6 +89,7 @@ void Texture::Unload()
 	width = 0;
 	height = 0;
 	id = 0;
+	filename = "";
 }
 
 void Texture::Bind(GLuint unit) const

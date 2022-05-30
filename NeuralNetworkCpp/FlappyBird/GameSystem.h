@@ -2,6 +2,7 @@
 #include "Graphics.h"
 #include <vector>
 #include "NetworkEvolver.h"
+#include "Renderer.h"
 
 constexpr float TIME_STEP = 1.0f / 50.0f;
 
@@ -33,10 +34,11 @@ public:
 	virtual void DrawGame(DataPack* data, Renderer& renderer) = 0;
 
 	inline std::vector<float>& GetManualOutput() { return manualOutput; }
-	virtual DataPack* GetDefaultSystem() = 0;
-	virtual int GetInputCount() = 0;
-	virtual int GetOutputCount() = 0;
-	virtual int GetDefaultHiddenNodes() = 0;
+	virtual DataPack* GetDefaultDataPack() = 0;
+	virtual DataPack* NewDataPack() const = 0;
+	virtual int GetInputCount() const  = 0;
+	virtual int GetOutputCount() const = 0;
+	virtual int GetDefaultHiddenNodes() const = 0;
 protected:
 	//the 'output' of the neural network, except controlled by the player.
 	//for flappy bird, manualOutput[0] would be set to one when pressing space, for example

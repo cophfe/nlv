@@ -7,7 +7,8 @@
 #include "implot.h"
 #include "glm.hpp"
 #include "Texture.h"
-
+#include "ext/matrix_transform.hpp"
+#include "ext/matrix_clip_space.hpp"
 //this is just a basic renderer literally made for flappy bird
 //yeeah no batching or nothing, it really sucks
 class Renderer
@@ -26,8 +27,11 @@ public:
 	{
 		glm::vec2 position;
 		float rotation;
-		float scale;
+		float size;
+		float aspect;
 	private:
+		friend Renderer;
+
 		glm::mat4x4 projection;
 		glm::mat4x4 view;
 	};
@@ -39,10 +43,11 @@ public:
 	//also updates the projection matrix
 	inline void SetCameraRotation(float rotation);
 	inline void SetCameraPosition(glm::vec2 position);
-	inline void SetCameraScale(float scale);
+	inline void SetCameraSize(float size);
 
 private:
-	
+	void UpdateCamera();
+
 	GLFWwindow* window;
 	Camera camera;
 
@@ -53,6 +58,9 @@ private:
 	GLuint elementBuffer;
 	//shader program id
 	GLuint shaderID;
-	
+	//uniform locations
+	GLuint colourLocation;
+	GLuint transformLocation;
+	GLuint viewProjectionLocation;
 };
 

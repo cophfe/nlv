@@ -1,4 +1,5 @@
 #include "Renderer.h"
+#include <iostream>
 
 void Renderer::SetupWindow(GLuint width, GLuint height, const char* title)
 {
@@ -22,13 +23,12 @@ void Renderer::SetupWindow(GLuint width, GLuint height, const char* title)
 
 	glfwSwapInterval(0);
 	glClearColor(0, 0, 0, 1);
-	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glEnable(GL_CULL_FACE);
-	glCullFace(GL_BACK);
+	//glEnable(GL_CULL_FACE);
+	//glCullFace(GL_BACK);
 
-	//now setup shader
+	//FRAGMENT CREATE
 	GLuint fragment = glCreateShader(GL_FRAGMENT_SHADER);
 	const char* fragmentString =
 		R"(
@@ -39,11 +39,21 @@ uniform sampler2D _Texture;
 uniform vec3 _Colour;
 void main()
 {
-    Colour = vec4(_Colour, 1.0) * texture(_Texture, TexCoord);
+    //Colour = vec4(_Colour, 1.0) * texture(_Texture, TexCoord);
+    Colour = vec4(1.0, 1.0, 0.0, 1.0);
 })";
 	glShaderSource(fragment, 1, &fragmentString, nullptr);
 	glCompileShader(fragment);
 
+	GLint success = 0;
+	glGetShaderiv(fragment, GL_COMPILE_STATUS, &success);
+	if (!success)
+	{
+		GLchar log[512];
+		glGetShaderInfoLog(fragment, 512, nullptr, log);
+		std::cout << "Failed to recompile frag shader:\n" << log << std::endl;
+	}
+	//VERTEX CREATE
 	GLuint vertex = glCreateShader(GL_VERTEX_SHADER);
 	const char* vertexString =
 		R"(
@@ -56,15 +66,40 @@ uniform mat4 _ViewProjection;
 void main()
 {
 	TexCoord = position;
-	gl_Position = _ViewProjection * (_Model * vec4(position, 1.0, 1.0));
+	gl_Position = vec4(position, 0.0, 1.0);// _ViewProjection * (_Model * vec4(position, 1.0, 1.0));
 })";
 	glShaderSource(vertex, 1, &vertexString, nullptr);
 	glCompileShader(vertex);
+
+	success = 0;
+	glGetShaderiv(vertex, GL_COMPILE_STATUS, &success);
+	if (!success)
+	{
+		GLchar log[512];
+		glGetShaderInfoLog(vertex, 512, nullptr, log);
+		std::cout << "Failed to recompile vert shader:\n" << log << std::endl;
+	}
+	//PROGRAM CREATE
 	shaderID = glCreateProgram();
 	glAttachShader(shaderID, vertex);
 	glAttachShader(shaderID, fragment);
 	glLinkProgram(shaderID);
-	//and now quad
+
+	success = 0;
+	glGetProgramiv(shaderID, GL_LINK_STATUS, &success);
+	if (success == GL_FALSE)
+	{
+		GLchar log[512];
+		glGetProgramInfoLog(shaderID, 512, NULL, log);
+		std::cout << "Failed to link shader program:\n" << log << std::endl;
+	}
+	//UNIFORM FIND
+	
+	glUseProgram(shaderID);
+	colourLocation = glGetUniformLocation(shaderID, "_Colour");
+	transformLocation = glGetUniformLocation(shaderID, "_Model");
+	viewProjectionLocation = glGetUniformLocation(shaderID, "_ViewProjection");
+	//GET QUAD
 	glGenVertexArrays(1, &vertexArray);
 	glBindVertexArray(vertexArray);
 	glGenBuffers(1, &vertexBuffer);
@@ -81,6 +116,7 @@ void main()
 		0, 1, 2,
 		0, 2, 3
 	};
+	glGenBuffers(1, &elementBuffer);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuffer);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(int), (void*)indices, GL_STATIC_DRAW);
 	//define position
@@ -88,6 +124,12 @@ void main()
 	glEnableVertexAttribArray(0);
 
 	defaultTexture.Load("white.png");
+	
+	//set up camera
+	SetCameraSize(1);
+	SetCameraPosition(glm::vec3(0, 0, 0));
+	SetCameraRotation(0);
+	UpdateCamera();
 }
 
 void Renderer::SetupImgui()
@@ -99,7 +141,7 @@ void Renderer::SetupImgui()
 	ImGui::StyleColorsDark();
 	ImGui_ImplGlfw_InitForOpenGL(window, true);
 	ImGui_ImplOpenGL3_Init((char*)glGetString(GL_NUM_SHADING_LANGUAGE_VERSIONS));
-
+	
 	//setup implot (https://github.com/epezent/implot)
 	ImPlot::CreateContext();
 }
@@ -109,9 +151,11 @@ void Renderer::StartFrame()
 	ImGui_ImplOpenGL3_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT);
 	ImGuiIO& io = ImGui::GetIO();
 	glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
+	
+	UpdateCamera();
 }
 
 void Renderer::EndFrame()
@@ -133,9 +177,19 @@ void Renderer::UnSetup()
 void Renderer::DrawSprite(Texture* texture, glm::vec2 position, float width, float height, float rotation, glm::vec3 colour, glm::vec2 pivot)
 {
 	//set colour
-	glUniform3f(glGetUniformLocation(shaderID, "_Colour"), colour.x, colour.y, colour.z);
+	glUniform3f(colourLocation, colour.x, colour.y, colour.z);
+	//bind texture
+	texture->Bind();
 	//calculate matrix
-	
+	rotation = glm::radians(rotation);
+	glm::mat4 matrix = glm::translate(glm::identity<glm::mat4>(), glm::vec3((pivot.x - 0.5f) * width, (pivot.y - 0.5f) * height, 0.0f));
+	matrix = glm::rotate(matrix, rotation, glm::vec3(0, 0, 1));
+	matrix = glm::translate(matrix, glm::vec3(position, 0.0f));
+	glUniformMatrix4fv(transformLocation, 1, GL_FALSE, (GLfloat*)&(matrix[0]));
+	//draw (batching you say? what is batching?)
+	glBindVertexArray(vertexArray);
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+	//glDrawArrays(GL_TRIANGLES, 0, 3);
 }
 
 void Renderer::DrawBox(glm::vec2 position, float width, float height, float rotation, glm::vec3 colour, glm::vec2 pivot)
@@ -145,13 +199,26 @@ void Renderer::DrawBox(glm::vec2 position, float width, float height, float rota
 
 inline void Renderer::SetCameraRotation(float rotation)
 {
-	camera.
+	camera.rotation = glm::radians(rotation);
 }
 
 inline void Renderer::SetCameraPosition(glm::vec2 position)
 {
+	camera.position = position;
 }
 
-inline void Renderer::SetCameraScale(float scale)
+inline void Renderer::SetCameraSize(float size)
 {
+	camera.size = size;
+}
+
+void Renderer::UpdateCamera()
+{
+	int w, h;
+	glfwGetWindowSize(window, &w, &h);
+	camera.view = glm::rotate(glm::identity<glm::mat4>(), camera.rotation, glm::vec3(0, 0, 1));
+	camera.view = glm::translate(camera.view, glm::vec3(camera.position, -1.0f));
+	camera.aspect = (float)w / h;
+	camera.projection = glm::ortho<float>(-camera.size * w, camera.size * w, -camera.size * h, camera.size * h, 0, 100);
+	glUniform4fv(viewProjectionLocation, 1, (GLfloat*)&((camera.projection * camera.view)[0]));
 }
