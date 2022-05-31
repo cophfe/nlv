@@ -32,7 +32,6 @@ public:
 	virtual void OnKeyPressed(GLFWwindow* window, int keycode, int action) = 0;
 	//called in the middle of drawing
 	virtual void DrawGame(DataPack* data, Renderer& renderer) = 0;
-
 	inline std::vector<float>& GetManualOutput() { return manualOutput; }
 	virtual DataPack* GetDefaultDataPack() = 0;
 	virtual DataPack* NewDataPack() const = 0;
@@ -40,6 +39,7 @@ public:
 	virtual int GetInputCount() const  = 0;
 	virtual int GetOutputCount() const = 0;
 	virtual int GetDefaultHiddenNodes() const = 0;
+	virtual float GetStepSpeedMultiplier() const { return 1.0f;  }
 protected:
 	//the 'output' of the neural network, except controlled by the player.
 	//for flappy bird, manualOutput[0] would be set to one when pressing space, for example

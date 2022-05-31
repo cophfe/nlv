@@ -52,16 +52,17 @@ Application::Application()
 
 Application::~Application()
 {
+	ClearEvolver();
 	if (gameSystem)
-		delete gameSystem;
-	if (dataPacks)
 	{
-		for (size_t i = 0; i < populationSize; i++)
-		{
-			delete dataPacks[i];
-		}
-		delete dataPacks;
-		dataPacks = nullptr;
+		delete gameSystem;
+		gameSystem = nullptr;
+	}
+	
+	if (currentSolution.dataPack)
+	{
+		delete currentSolution.dataPack;
+		currentSolution.dataPack = nullptr;
 	}
 	renderer.UnSetup();
 }
@@ -80,6 +81,8 @@ void Application::RunGeneration()
 		timeToComplete = (float)std::chrono::duration_cast<std::chrono::duration<double>>(std::chrono::high_resolution_clock::now() - start).count();
 
 		GetEvolverValues();
+
+		SetCurrentSolution(0);
 	}
 }
 
@@ -101,6 +104,7 @@ void Application::RunGenerations()
 
 		GetEvolverValues();
 	}
+	SetCurrentSolution(0);
 	evolverIsRunning = false;
 	runGenerations = false;
 }
@@ -114,11 +118,11 @@ void Application::DrawEvolverWindow()
 
 	if (ImGui::Combo("Game", (int*)&gameType, "FlappyBird\0PoleBalancer\0Snake\0\0"))
 	{
-		SetGame(gameType);
 		ClearEvolver();
+		SetGame(gameType);
 	}
 	//show neural network information
-	ImGui::Text("Input nodes: %i", INPUT_COUNT);
+	ImGui::Text("Input nodes: %i", gameSystem->GetInputCount());
 	if (ImGui::InputInt("Hidden layers", &hiddenLayers, 1, 1, ImGuiInputTextFlags_AlwaysOverwrite))
 	{
 		hiddenLayers = glm::clamp(hiddenLayers, 1, 5);
@@ -131,7 +135,7 @@ void Application::DrawEvolverWindow()
 	}
 	ImGui::InputScalarN("Nodes per layer", ImGuiDataType_S32, nodesPerLayer.data(), hiddenLayers);
 
-	ImGui::Text("Output nodes: 1");
+	ImGui::Text("Output nodes: %i", gameSystem->GetOutputCount());
 	ImGui::SliderInt("Population", &populationSize, 100, 5000, "%d", ImGuiSliderFlags_Logarithmic);
 	ImGui::Spacing();
 
@@ -152,14 +156,6 @@ void Application::DrawEvolverWindow()
 
 		ClearEvolver();
 		ConfigureEvolver();
-		evolver.SetStaticEpisodes(staticEpisodes);
-		evolver.SetIsThreadedEpisodes(multithread);
-		evolver.SetMaxSteps(maxSteps);
-		evolver.SetElitePercent(elitePercent);
-		evolver.SetMutationRate(mutationRate);
-		evolver.SetMutationType((EvolverMutationType)mutationType);
-		evolver.SetCrossoverType((EvolverCrossoverType)crossoverType);
-		evolver.SetSelectionType((EvolverSelectionType)selectionType);
 	}
 	ImGui::Spacing();
 
@@ -210,7 +206,6 @@ void Application::DrawEvolverWindow()
 		}
 	}
 
-	
 	//Episode
 	ImGui::Separator();
 	ImGui::Text("These values can be modified after construction");
@@ -428,6 +423,10 @@ void Application::DrawPlayWindow()
 		}
 		ImGui::EndTable();
 	}
+	if (ImGui::Button("Step"))
+	{
+		currentSolution.continueTimer = TIME_STEP;
+	}
 
 	if (currentSolution.isAI)
 	{
@@ -452,7 +451,7 @@ void Application::DrawPlayWindow()
 
 void Application::DrawGame()
 {
-	if (currentSolution.running)
+	if (evolverIsSetup)
 		gameSystem->DrawGame(currentSolution.dataPack, renderer);
 }
 
@@ -488,7 +487,7 @@ void Application::OnStartGeneration(const NetworkEvolver& evolver, NetworkOrgani
 	
 	for (size_t i = 0; i < evolver.GetPopulationSize(); i++)
 	{
-		*(ptr->dataPacks[i]) = *ts;
+		ptr->gameSystem->CopyDataPack(ptr->dataPacks[i], ts);
 		ptr->gameSystem->SetNetworkInputs(ptr->dataPacks[i], organisms[i].GetNetworkInputArray());
 	}
 
@@ -533,7 +532,7 @@ void Application::SetCurrentSolution(int organismIndex)
 	//change to set 
 	currentSolution.playSpeed = 0;
 	currentSolution.isAI = true;
-	gameSystem->SetNetworkInputs(currentSolution.dataPack, currentSolution.inputs);
+	gameSystem->SetNetworkInputs(currentSolution.dataPack, currentSolution.inputs.data());
 	currentSolution.running = true;
 }
 
@@ -553,20 +552,21 @@ void Application::RunCurrentSolution()
 {
 	if (currentSolution.running)
 	{
+		float multiplier = gameSystem->GetStepSpeedMultiplier();
 		switch (currentSolution.playSpeed)
 		{
-			//case 0 is paused
-
+		case 0: //Pause
+			multiplier *= 0;
 		case 1: //Regular
-			currentSolution.continueTimer += deltaTime;
 			break;
 		case 2: //Faster
-			currentSolution.continueTimer += 5 * deltaTime;
+			multiplier *= 5;
 			break;
 		case 3: //Supa Fast
-			currentSolution.continueTimer += 15 * deltaTime;
+			multiplier *= 15;
 			break;
 		}
+		currentSolution.continueTimer += multiplier * deltaTime;
 
 		if (currentSolution.continueTimer >= TIME_STEP)
 		{
@@ -574,9 +574,9 @@ void Application::RunCurrentSolution()
 
 			if (currentSolution.isAI)
 			{
-				currentSolution.network.Evaluate(currentSolution.inputs, INPUT_COUNT);
+				currentSolution.network.Evaluate(currentSolution.inputs.data(), gameSystem->GetInputCount());
 				gameSystem->StepOrganism(currentSolution.dataPack, currentSolution.network.GetPreviousActivations(), currentSolution.fitness, currentSolution.running);
-				gameSystem->SetNetworkInputs(currentSolution.dataPack, currentSolution.inputs);
+				gameSystem->SetNetworkInputs(currentSolution.dataPack, currentSolution.inputs.data());
 
 				currentSolution.steps++;
 				if (currentSolution.steps >= maxSteps - 1)
@@ -592,15 +592,13 @@ void Application::RunCurrentSolution()
 				gameSystem->ResetManualOutput();
 				currentSolution.steps++;
 			}
-
-
 		}
 	}
 }
 
 void Application::ConfigureEvolver()
 {
-	Network network(INPUT_COUNT, nodesPerLayer, 1);
+	Network network(gameSystem->GetInputCount(), nodesPerLayer, gameSystem->GetOutputCount());
 	EvolverBuilder def = EvolverBuilder(network, StepFunction, populationSize, maxSteps, seed)
 		.SetMutation((EvolverMutationType)mutationType, mutationRate, 1.0f)
 		.SetCrossover((EvolverCrossoverType)crossoverType)
@@ -616,6 +614,7 @@ void Application::ConfigureEvolver()
 		dataPacks[i] = gameSystem->NewDataPack();
 	}
 	SetupDefaultSystem();
+	SetCurrentSolution(0);
 	evolver.SetUserPointer(this);
 	
 	gameSystem->CopyDataPack(currentSolution.dataPack, gameSystem->GetDefaultDataPack());
@@ -660,14 +659,19 @@ void Application::SetGame(GameType type)
 	switch (type)
 	{
 	case Application::GameType::SNAKE:
+	{
+		gameSystem = new SnakeSystem();
+		break;
+	}
 	case Application::GameType::POLE_BALANCER:
 	case Application::GameType::FLAPPY_BIRD:
 	{
 		gameSystem = new FlappyBirdSystem();
-	}
 		break;
 	}
+	}
 	currentSolution.dataPack = gameSystem->NewDataPack();
+	currentSolution.inputs = std::vector<float>(gameSystem->GetInputCount());
 
 	ClearEvolver();
 	nodesPerLayer = { gameSystem->GetDefaultHiddenNodes() };

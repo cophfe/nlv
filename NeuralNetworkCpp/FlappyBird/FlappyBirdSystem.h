@@ -5,17 +5,21 @@
 class FlappyBirdSystem : public GameSystem
 {
 public:
-	static constexpr float MOVEMENT_SPEED = 10;
+	static constexpr float BAR_GAIN = 1.0f;
+	static constexpr float EXIST_GAIN = 0.2f;
+	static constexpr float FLAP_LOSS = 0.05f;
+
+	static constexpr float MOVEMENT_SPEED = 2;
 	static constexpr float GRAVITY = -9.81f;
+	static constexpr float SCREEN_HALF_HEIGHT = 3.0f;
+	static constexpr float SCREEN_HALF_WIDTH = 5.0f;
 	static constexpr float BAR_MIN_HEIGHT = 0.3f;
-	static constexpr float BAR_MAX_HEIGHT = 1.0f;
-	static constexpr float SPACE_MAX_HEIGHT = 0.6f;
-	static constexpr float SPACE_MIN_HEIGHT = 0.35f;
+	static constexpr float SPACE_MAX_HEIGHT = 3.0f;
+	static constexpr float SPACE_MIN_HEIGHT = 0.75f;
+	static constexpr float BAR_MAX_HEIGHT = SCREEN_HALF_HEIGHT * 2 - 2.0f;
 	static constexpr float BAR_HALF_WIDTH = 0.3f;
-	static constexpr float SCREEN_HALF_WIDTH = 8.0f;
 	static constexpr float BAR_DISTANCE = 4.0f;
-	static constexpr float JUMP_FORCE = 5.0f;
-	static constexpr float SCREEN_HALF_HEIGHT = 6.0f;
+	static constexpr float JUMP_FORCE = 3.24f;
 	static constexpr float BIRD_RADIUS = 0.25f;
 
 	static constexpr int INPUT_NODES = 5;

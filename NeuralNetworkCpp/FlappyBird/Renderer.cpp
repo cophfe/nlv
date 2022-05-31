@@ -13,6 +13,7 @@ void Renderer::SetupWindow(GLuint width, GLuint height, const char* title)
 		glfwTerminate();
 		throw std::runtime_error("Something went wrong!");
 	}
+	glfwMaximizeWindow(window);
 
 	glfwMakeContextCurrent(window);
 	if (!gladLoadGL())
