@@ -26,7 +26,7 @@ constexpr float DEFAULT_MAX_TIME = 60;
 constexpr float DEFAULT_ELITE = 0.05f;
 constexpr bool DEFAULT_THREADED = false;
 constexpr bool DEFAULT_STATIC = false;
-constexpr bool DEFAULT_MUTATION_RATE = 0.2f;
+constexpr float DEFAULT_MUTATION_RATE = 0.2f;
 
 class Application
 {
@@ -38,6 +38,7 @@ public:
 	~Application();
 private:
 	void RunGeneration();
+	void RunGenerations();
 	void DrawEvolverWindow();
 	void DrawDataWindow();
 	void DrawPlayWindow();
@@ -62,7 +63,7 @@ private:
 	std::chrono::high_resolution_clock::time_point lastTime;
 
 	//state variables
-	enum class GameType
+	enum class GameType : int
 	{
 		FLAPPY_BIRD,
 		POLE_BALANCER,
@@ -88,6 +89,7 @@ private:
 	float timeToComplete = 0;
 	float progress = 0;
 	bool evolverIsRunning = false;
+	bool runGenerations = false;
 	unsigned int seed = 0;
 
 	std::vector<float> averages;

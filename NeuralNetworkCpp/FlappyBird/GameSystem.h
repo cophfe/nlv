@@ -20,10 +20,10 @@ public:
 
 	};
 
-	//set the default system to values on the start of a generation
-	virtual void SetDefaultSystem(std::minstd_rand& random) = 0;
+	//set the default datapack to values on the start of a generation
+	virtual void SetDefaultDataPack(std::minstd_rand& random) = 0;
 	//the logic for stepping through the organism throughout an episode
-	virtual void StepOrganism(DataPack* data, const float* networkOutput, float& fitness, bool& continueStepping) = 0;
+	virtual void StepOrganism(DataPack* data, const float* networkOutputs, float& fitness, bool& continueStepping) = 0;
 	//the logic for setting the neural network's inputs
 	virtual void SetNetworkInputs(DataPack* data, float* networkInputArray) = 0;
 	//the logic for clearing the manual output after a manual call for step organism
@@ -36,6 +36,7 @@ public:
 	inline std::vector<float>& GetManualOutput() { return manualOutput; }
 	virtual DataPack* GetDefaultDataPack() = 0;
 	virtual DataPack* NewDataPack() const = 0;
+	virtual void CopyDataPack(DataPack* dest, DataPack* src) const = 0;
 	virtual int GetInputCount() const  = 0;
 	virtual int GetOutputCount() const = 0;
 	virtual int GetDefaultHiddenNodes() const = 0;

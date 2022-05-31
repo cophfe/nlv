@@ -42,7 +42,7 @@ Application::Application()
 	glfwSetKeyCallback(renderer.GetWindow(), OnKeyPressed);
 	renderer.SetupImgui();
 
-	renderer.SetCameraSize(10.0f);
+	renderer.SetCameraSize(100.0f);
 
 	SetGame(GameType::FLAPPY_BIRD);
 	ConfigureEvolver();
@@ -83,6 +83,28 @@ void Application::RunGeneration()
 	}
 }
 
+void Application::RunGenerations()
+{
+	if (evolverIsRunning)
+		return;
+
+	runGenerations = true;
+	evolverIsRunning = true;
+	while (evolver.GetIsInitiated() && runGenerations)
+	{
+		std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
+
+		evolver.EvaluateGeneration();
+
+		std::chrono::high_resolution_clock::time_point e = std::chrono::high_resolution_clock::now();
+		timeToComplete = (float)std::chrono::duration_cast<std::chrono::duration<double>>(std::chrono::high_resolution_clock::now() - start).count();
+
+		GetEvolverValues();
+	}
+	evolverIsRunning = false;
+	runGenerations = false;
+}
+
 void Application::DrawEvolverWindow()
 {
 	//if  the evolver isn't setup, show setup UI
@@ -90,6 +112,11 @@ void Application::DrawEvolverWindow()
 	if (evolverIsSetup)
 		ImGui::BeginDisabled();
 
+	if (ImGui::Combo("Game", (int*)&gameType, "FlappyBird\0PoleBalancer\0Snake\0\0"))
+	{
+		SetGame(gameType);
+		ClearEvolver();
+	}
 	//show neural network information
 	ImGui::Text("Input nodes: %i", INPUT_COUNT);
 	if (ImGui::InputInt("Hidden layers", &hiddenLayers, 1, 1, ImGuiInputTextFlags_AlwaysOverwrite))
@@ -163,16 +190,8 @@ void Application::DrawEvolverWindow()
 			if (ImGui::Button("Confirm"))
 			{
 				//allow user to reconfigure evolver
-				evolver = NetworkEvolver();
-				SetupDefaultSystem();
-				*currentSolution.dataPack = *gameSystem->GetDefaultDataPack();
-				evolverIsSetup = false;
+				ClearEvolver();
 				ImGui::CloseCurrentPopup();
-				averages.clear();
-				maximums.clear();
-				minimums.clear();
-				maxEver = 0;
-				minEver = 0;
 			}
 			ImGui::SameLine();
 			if (ImGui::Button("Cancel"))
@@ -212,11 +231,10 @@ void Application::DrawEvolverWindow()
 			evolver.SetElitePercent(elitePercent);
 		}
 		//Mutation
-		if (ImGui::Combo("Mutation Type", &mutationType, "Set\0Add\0\0"))
-			evolver.SetMutationType((EvolverMutationType)mutationType);
-		ImGui::SameLine();
 		if (ImGui::SliderFloat("Mutation Rate", &mutationRate, 0, 1, "%0.2f"))
 			evolver.SetMutationRate(mutationRate);
+		if (ImGui::Combo("Mutation Type", &mutationType, "Set\0Add\0\0"))
+			evolver.SetMutationType((EvolverMutationType)mutationType);
 		//Crossover
 		if (ImGui::Combo("Crossover Type", &crossoverType, "Proportional\0Ranked\0Tournament\0\0"))
 			evolver.SetCrossoverType((EvolverCrossoverType)crossoverType);
@@ -228,21 +246,42 @@ void Application::DrawEvolverWindow()
 	if (disabledWhileRunning)
 		ImGui::EndDisabled();
 	ImGui::End();
-
-	ImGui::ShowDemoWindow();
 }
-
 
 void Application::DrawDataWindow()
 {
 	ImGui::Begin("Data");
 
-	ImGui::BeginDisabled(!evolverIsSetup || evolverIsRunning);
+	bool disableRunning = !evolverIsSetup || evolverIsRunning;
+	if (disableRunning)
+		ImGui::BeginDisabled();
 	if (ImGui::Button("Run Generation"))
 	{
 		std::thread thread(&Application::RunGeneration, this);
 		thread.detach();
 	}
+	ImGui::SameLine();
+
+	bool disableRunningRunGenerations = runGenerations && (disableRunning);
+	if (disableRunningRunGenerations)
+		ImGui::EndDisabled();
+	if (runGenerations)
+	{
+		if (ImGui::Button("Running..."))
+		{
+			runGenerations = false;
+		}
+	}
+	else
+	{
+		if (ImGui::Button("Run Generations"))
+		{
+			std::thread thread(&Application::RunGenerations, this);
+			thread.detach();
+		}
+	}
+	if (disableRunningRunGenerations)
+		ImGui::BeginDisabled();
 	if (!evolverIsSetup)
 	{
 		ImGui::SameLine();
@@ -252,7 +291,8 @@ void Application::DrawDataWindow()
 		ImGui::SameLine();
 		ImGui::Text("Generation #%i", evolver.GetGeneration());
 	}
-	ImGui::EndDisabled();
+	if (disableRunning)
+		ImGui::EndDisabled();
 
 	ImGui::ProgressBar(progress);
 	ImGui::Text("Completion Time: %0.2f", timeToComplete);
@@ -478,17 +518,18 @@ void Application::StepFunction(const NetworkEvolver& evolver, NetworkOrganism& o
 
 void Application::SetupDefaultSystem()
 {
-	gameSystem->SetDefaultSystem(random);
+	gameSystem->SetDefaultDataPack(random);
 }
 
 void Application::SetCurrentSolution(int organismIndex)
 {
 	const NetworkOrganism& org = evolver.GetPopulationArray()[organismIndex];
 	currentSolution.network = org.GetNetwork();
-	*currentSolution.dataPack = *gameSystem->GetDefaultDataPack();
+	gameSystem->CopyDataPack(currentSolution.dataPack, gameSystem->GetDefaultDataPack());
 	currentSolution.fitness = 0;
 	currentSolution.steps = 0;
 	currentSolution.continueTimer = 0;
+	currentSolution.orgIndex = organismIndex;
 	//change to set 
 	currentSolution.playSpeed = 0;
 	currentSolution.isAI = true;
@@ -498,7 +539,7 @@ void Application::SetCurrentSolution(int organismIndex)
 
 void Application::SetCurrentSolutionToPlayMode()
 {
-	*currentSolution.dataPack = *gameSystem->GetDefaultDataPack();
+	gameSystem->CopyDataPack(currentSolution.dataPack, gameSystem->GetDefaultDataPack());
 	currentSolution.fitness = 0;
 	currentSolution.steps = 0;
 	currentSolution.continueTimer = 0;
@@ -561,9 +602,9 @@ void Application::ConfigureEvolver()
 {
 	Network network(INPUT_COUNT, nodesPerLayer, 1);
 	EvolverBuilder def = EvolverBuilder(network, StepFunction, populationSize, maxSteps, seed)
-		.SetMutation(EvolverMutationType::Add, 0.2f, 1.0f)
-		.SetCrossover(EvolverCrossoverType::Uniform)
-		.SetSelection(EvolverSelectionType::FitnessProportional)
+		.SetMutation((EvolverMutationType)mutationType, mutationRate, 1.0f)
+		.SetCrossover((EvolverCrossoverType)crossoverType)
+		.SetSelection((EvolverSelectionType)selectionType)
 		.SetCallbacks(OnStartGeneration, OnEndGeneration)
 		.SetElitePercent(elitePercent)
 		.SetEpisodeParameters(staticEpisodes, multithread, THREAD_COUNT);
@@ -577,7 +618,7 @@ void Application::ConfigureEvolver()
 	SetupDefaultSystem();
 	evolver.SetUserPointer(this);
 	
-	*currentSolution.dataPack = *gameSystem->GetDefaultDataPack();
+	gameSystem->CopyDataPack(currentSolution.dataPack, gameSystem->GetDefaultDataPack());
 
 	averages.clear();
 	maximums.clear();

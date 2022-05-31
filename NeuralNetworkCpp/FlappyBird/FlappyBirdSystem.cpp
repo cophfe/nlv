@@ -11,7 +11,7 @@ FlappyBirdSystem::~FlappyBirdSystem()
 {
 }
 
-void FlappyBirdSystem::SetDefaultSystem(std::minstd_rand& random)
+void FlappyBirdSystem::SetDefaultDataPack(std::minstd_rand& random)
 {
 	std::uniform_real_distribution<float> dist(0.0f, 1.0f);
 	defaultDataPack.yVelocity = 0;
@@ -24,7 +24,7 @@ void FlappyBirdSystem::SetDefaultSystem(std::minstd_rand& random)
 
 }
 
-void FlappyBirdSystem::StepOrganism(DataPack* data, const float* networkOutput, float& fitness, bool& continueStepping)
+void FlappyBirdSystem::StepOrganism(DataPack* data, const float* networkOutputs, float& fitness, bool& continueStepping)
 {
 	//fitness is basically distance
 	fitness += TIME_STEP * MOVEMENT_SPEED;
@@ -33,7 +33,7 @@ void FlappyBirdSystem::StepOrganism(DataPack* data, const float* networkOutput, 
 	FlappyBirdDataPack& dP = *(FlappyBirdDataPack*)data;
 	
 	dP.yPos += TIME_STEP * dP.yVelocity;
-	if (*networkOutput)
+	if (*networkOutputs)
 		dP.yVelocity = JUMP_FORCE;
 	dP.yVelocity += TIME_STEP * GRAVITY;
 	
@@ -90,11 +90,26 @@ void FlappyBirdSystem::OnKeyPressed(GLFWwindow* window, int keycode, int action)
 
 void FlappyBirdSystem::DrawGame(DataPack* data, Renderer& renderer)
 {
-	//renderer.DrawSprite(&bird, )
-	renderer.DrawBox(glm::vec2(0, 0), 0.2f, 0.2f, 10.0f, glm::vec3(1, 0, 0));
+	FlappyBirdDataPack& info = *(FlappyBirdDataPack*)(data);
+	float unit = 10.0f;
+	renderer.DrawBox(glm::vec2(0, 0), SCREEN_HALF_WIDTH * 2 * unit, SCREEN_HALF_HEIGHT * 2 * unit, 0, glm::vec3(0.3f, 1, 1));
+
+	auto velocity = glm::normalize(glm::vec2(MOVEMENT_SPEED, info.yVelocity));
+	float angle = glm::atan(velocity.y, velocity.x);
+	renderer.DrawSprite(&bird, glm::vec2(0, (info.yPos - SCREEN_HALF_HEIGHT) * unit ), 10.0f, 10.0f, glm::degrees(angle));
+
+	renderer.DrawBox(unit * glm::vec2(info.barXPos, info.barHeight / 2.0f), unit * BAR_HALF_WIDTH * 2.0f, info.barHeight * unit, 0, glm::vec3(0.2f, 0.9f, 0.2f));
+	renderer.DrawBox(unit * glm::vec2(info.barXPos, SCREEN_HALF_HEIGHT * 2.0f - (info.barHeight + info.spaceHeight) / 2.0f),
+		unit * BAR_HALF_WIDTH * 2.0f, info.barHeight * unit, 0, glm::vec3(0.2f, 0.9f, 0.2f));
 }
 
 GameSystem::DataPack* FlappyBirdSystem::NewDataPack() const
 {
 	return new FlappyBirdDataPack();
+}
+
+void FlappyBirdSystem::CopyDataPack(DataPack* dest, DataPack* src) const
+{
+	auto destt = (FlappyBirdDataPack*)dest;
+	*destt = *(FlappyBirdDataPack*)src;
 }

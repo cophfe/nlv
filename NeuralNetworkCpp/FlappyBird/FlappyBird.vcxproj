@@ -169,6 +169,7 @@
     <ClCompile Include="FlappyBirdSystem.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="Application.cpp" />
+    <ClCompile Include="SnakeSystem.cpp" />
     <ClCompile Include="Source.cpp" />
     <ClCompile Include="Texture.cpp" />
   </ItemGroup>
@@ -178,6 +179,7 @@
     <ClInclude Include="Graphics.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="Application.h" />
+    <ClInclude Include="SnakeSystem.h" />
     <ClInclude Include="stb_image.h" />
     <ClInclude Include="Texture.h" />
   </ItemGroup>

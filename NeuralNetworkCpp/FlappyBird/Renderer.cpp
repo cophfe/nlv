@@ -6,6 +6,7 @@ void Renderer::SetupWindow(GLuint width, GLuint height, const char* title)
 	if (glfwInit() == GL_FALSE)
 		throw std::runtime_error("Something went wrong!");
 
+	glfwWindowHint(GLFW_SAMPLES, 4);
 	window = glfwCreateWindow(width, height, title, nullptr, nullptr);
 	if (!window)
 	{
@@ -25,6 +26,7 @@ void Renderer::SetupWindow(GLuint width, GLuint height, const char* title)
 	glClearColor(0, 0, 0, 1);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glEnable(GL_MULTISAMPLE);
 	//glEnable(GL_CULL_FACE);
 	//glCullFace(GL_BACK);
 
@@ -39,8 +41,8 @@ uniform sampler2D _Texture;
 uniform vec3 _Colour;
 void main()
 {
-    //Colour = vec4(_Colour, 1.0) * texture(_Texture, TexCoord);
-    Colour = vec4(1.0, 1.0, 0.0, 1.0);
+    Colour = vec4(_Colour, 1.0) * textureLod(_Texture, TexCoord, 0);
+    //Colour = ;
 })";
 	glShaderSource(fragment, 1, &fragmentString, nullptr);
 	glCompileShader(fragment);
@@ -66,7 +68,7 @@ uniform mat4 _ViewProjection;
 void main()
 {
 	TexCoord = position;
-	gl_Position = vec4(position, 0.0, 1.0);// _ViewProjection * (_Model * vec4(position, 1.0, 1.0));
+	gl_Position = _ViewProjection * (_Model * vec4(position - vec2(0.5), 1.0, 1.0));
 })";
 	glShaderSource(vertex, 1, &vertexString, nullptr);
 	glCompileShader(vertex);
@@ -99,6 +101,7 @@ void main()
 	colourLocation = glGetUniformLocation(shaderID, "_Colour");
 	transformLocation = glGetUniformLocation(shaderID, "_Model");
 	viewProjectionLocation = glGetUniformLocation(shaderID, "_ViewProjection");
+	glUniform1ui(glGetUniformLocation(shaderID, "_Texture"), 0);
 	//GET QUAD
 	glGenVertexArrays(1, &vertexArray);
 	glBindVertexArray(vertexArray);
@@ -112,21 +115,23 @@ void main()
 	};
 	//both local pos and uv data
 	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * 4, (void*)vertices, GL_STATIC_DRAW);
-	int indices[6] = {
+
+	unsigned int indices[6] = {
 		0, 1, 2,
 		0, 2, 3
 	};
 	glGenBuffers(1, &elementBuffer);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuffer);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(int), (void*)indices, GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(unsigned int), (void*)indices, GL_STATIC_DRAW);
 	//define position
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(glm::vec2), (void*)0);
 	glEnableVertexAttribArray(0);
 
+
 	defaultTexture.Load("white.png");
-	
+
 	//set up camera
-	SetCameraSize(1);
+	SetCameraSize(10.0f);
 	SetCameraPosition(glm::vec3(0, 0, 0));
 	SetCameraRotation(0);
 	UpdateCamera();
@@ -179,17 +184,20 @@ void Renderer::DrawSprite(Texture* texture, glm::vec2 position, float width, flo
 	//set colour
 	glUniform3f(colourLocation, colour.x, colour.y, colour.z);
 	//bind texture
+	if (texture == nullptr)
+		texture = &defaultTexture;
 	texture->Bind();
 	//calculate matrix
 	rotation = glm::radians(rotation);
-	glm::mat4 matrix = glm::translate(glm::identity<glm::mat4>(), glm::vec3((pivot.x - 0.5f) * width, (pivot.y - 0.5f) * height, 0.0f));
-	matrix = glm::rotate(matrix, rotation, glm::vec3(0, 0, 1));
+	glm::mat4 matrix = glm::identity<glm::mat4>();
 	matrix = glm::translate(matrix, glm::vec3(position, 0.0f));
+	matrix = glm::rotate(matrix, rotation, glm::vec3(0, 0, 1));
+	//matrix = glm::translate(matrix, glm::vec3((pivot.x - 0.5f) * width, (pivot.y - 0.5f) * height, 0.0f));
+	matrix = glm::scale(matrix, glm::vec3(width, height, 1));
 	glUniformMatrix4fv(transformLocation, 1, GL_FALSE, (GLfloat*)&(matrix[0]));
-	//draw (batching you say? what is batching?)
+	//draw (batching you say? pffffffffffffffffffffff)
 	glBindVertexArray(vertexArray);
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
-	//glDrawArrays(GL_TRIANGLES, 0, 3);
 }
 
 void Renderer::DrawBox(glm::vec2 position, float width, float height, float rotation, glm::vec3 colour, glm::vec2 pivot)
@@ -216,9 +224,10 @@ void Renderer::UpdateCamera()
 {
 	int w, h;
 	glfwGetWindowSize(window, &w, &h);
+
 	camera.view = glm::rotate(glm::identity<glm::mat4>(), camera.rotation, glm::vec3(0, 0, 1));
 	camera.view = glm::translate(camera.view, glm::vec3(camera.position, -1.0f));
 	camera.aspect = (float)w / h;
-	camera.projection = glm::ortho<float>(-camera.size * w, camera.size * w, -camera.size * h, camera.size * h, 0, 100);
-	glUniform4fv(viewProjectionLocation, 1, (GLfloat*)&((camera.projection * camera.view)[0]));
+	camera.projection = glm::ortho<float>(camera.aspect  * -camera.size, camera.aspect * camera.size, -camera.size, camera.size, 0, 100);
+	glUniformMatrix4fv(viewProjectionLocation, 1, GL_FALSE, (GLfloat*)&((camera.projection * camera.view)[0]));
 }

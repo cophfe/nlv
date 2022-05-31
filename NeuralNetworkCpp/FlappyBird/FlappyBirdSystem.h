@@ -12,10 +12,10 @@ public:
 	static constexpr float SPACE_MAX_HEIGHT = 0.6f;
 	static constexpr float SPACE_MIN_HEIGHT = 0.35f;
 	static constexpr float BAR_HALF_WIDTH = 0.3f;
-	static constexpr float SCREEN_HALF_WIDTH = 5.0f;
+	static constexpr float SCREEN_HALF_WIDTH = 8.0f;
 	static constexpr float BAR_DISTANCE = 4.0f;
 	static constexpr float JUMP_FORCE = 5.0f;
-	static constexpr float SCREEN_HALF_HEIGHT = 1.0f;
+	static constexpr float SCREEN_HALF_HEIGHT = 6.0f;
 	static constexpr float BIRD_RADIUS = 0.25f;
 
 	static constexpr int INPUT_NODES = 5;
@@ -35,9 +35,9 @@ public:
 	};
 
 	// Inherited via GameSystem
-	virtual void SetDefaultSystem(std::minstd_rand& random) override;
+	virtual void SetDefaultDataPack(std::minstd_rand& random) override;
 
-	virtual void StepOrganism(DataPack* data, const float* networkOutput, float& fitness, bool& continueStepping) override;
+	virtual void StepOrganism(DataPack* data, const float* networkOutputs, float& fitness, bool& continueStepping) override;
 
 	virtual void SetNetworkInputs(DataPack* data, float* networkInputArray) override;
 
@@ -48,6 +48,7 @@ public:
 	virtual void DrawGame(DataPack* data, Renderer& renderer) override;
 
 	virtual DataPack* NewDataPack() const override;
+	virtual void CopyDataPack(DataPack* dest, DataPack* src) const override;
 
 	virtual int GetInputCount() const override { return INPUT_NODES; }
 	virtual int GetOutputCount() const override { return OUTPUT_NODES; }

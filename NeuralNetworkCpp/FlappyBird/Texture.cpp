@@ -45,6 +45,7 @@ bool Texture::Load(const char* filename, TextureFormat format)
 	}
 	int channels;
 	unsigned char* data;
+	stbi_set_flip_vertically_on_load(true);
 	data = stbi_load(filename, &width, &height, &channels, reqChannels);
 
 	if (!data)
@@ -58,21 +59,28 @@ bool Texture::Load(const char* filename, TextureFormat format)
 	{
 	case 1:
 		this->format = TextureFormat::R;
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 		break;
 	case 2:
 		this->format = TextureFormat::RG;
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 2);
 		break;
 	case 3:
 		this->format = TextureFormat::RGB;
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 		break;
 	case 4:
 		this->format = TextureFormat::RGBA;
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 		break;
 	default:
 		this->format = TextureFormat::RGBA;
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 		break;
 	}
-	glTexImage2D(GL_TEXTURE_2D, 0, (GLint)this->format, width, height, 0, (GLint)this->format, GL_UNSIGNED_BYTE, data);
+	glTexImage2D(GL_TEXTURE_2D, 0, (GLenum)this->format, width, height, 0, (GLenum)this->format, GL_UNSIGNED_BYTE, data);
+	glGenerateMipmap(GL_TEXTURE_2D);
+
 	stbi_image_free(data);
 
 	loaded = true;
