@@ -124,7 +124,6 @@ void SnakeSystem::OnKeyPressed(GLFWwindow* window, int keycode, int action)
 {
 	if (action == GLFW_PRESS)
 	{
-
 		if (keycode == GLFW_KEY_LEFT)
 		{
 			manualOutput[0] = 1;

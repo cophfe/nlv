@@ -13,6 +13,7 @@
 #include "GameSystem.h"
 #include "FlappyBirdSystem.h"
 #include "SnakeSystem.h"
+#include "BalancerSystem.h"
 
 //basic test of genetic algorithm
 //https://researchbank.swinburne.edu.au/file/62a8df69-4a2c-407f-8040-5ac533fc2787/1/PDF%20(12%20pages).pdf
@@ -24,7 +25,7 @@ constexpr int DEFAULT_HIDDEN_NODES = 6;
 constexpr int DEFAULT_POPULATION = 1000;
 constexpr float DEFAULT_MAX_TIME = 60;
 constexpr float DEFAULT_ELITE = 0.05f;
-constexpr bool DEFAULT_THREADED = false;
+constexpr bool DEFAULT_THREADED = true;
 constexpr bool DEFAULT_STATIC = false;
 constexpr float DEFAULT_MUTATION_RATE = 0.2f;
 

@@ -44,7 +44,7 @@ Application::Application()
 
 	renderer.SetCameraSize(100.0f);
 
-	SetGame(GameType::FLAPPY_BIRD);
+	SetGame(GameType::POLE_BALANCER);
 	ConfigureEvolver();
 	evolverIsSetup = true;
 
@@ -300,15 +300,15 @@ void Application::DrawDataWindow()
 
 		if (evolver.GetGeneration() != 0)
 		{
-			ImPlot::SetupAxisLimits(ImAxis_X1, 1, evolver.GetGeneration() + 1, ImPlotCond_Always);
-			ImPlot::SetupAxisLimits(ImAxis_Y1, minEver - 1, maxEver + 1, ImPlotCond_Always);
+			ImPlot::SetupAxisLimits(ImAxis_X1, 1, evolver.GetGeneration(), ImPlotCond_Always);
+			ImPlot::SetupAxisLimits(ImAxis_Y1, minEver * 1.1f - 1, maxEver * 1.1f, ImPlotCond_Always);
 		}
-		ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle);
-		ImPlot::PlotLine("Average", averages.data(), averages.size(), 1, 1, 1);
-		ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle);
-		ImPlot::PlotLine("Maximum", maximums.data(), maximums.size(), 1, 1, 1);
-		ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle);
-		ImPlot::PlotLine("Minimum", minimums.data(), minimums.size(), 1, 1, 1);
+		//ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle);
+		ImPlot::PlotLine("Average", averages.data(), averages.size(), 1, 1, 0);
+		ImPlot::SetNextMarkerStyle(ImPlotMarker_Asterisk);
+		ImPlot::PlotLine("Maximum", maximums.data(), maximums.size(), 1, 1, 0);
+		//ImPlot::SetNextMarkerStyle(ImPlotMarker_Circle);
+		ImPlot::PlotLine("Minimum", minimums.data(), minimums.size(), 1, 1, 0);
 		ImPlot::EndPlot();
 	}
 	
@@ -664,6 +664,10 @@ void Application::SetGame(GameType type)
 		break;
 	}
 	case Application::GameType::POLE_BALANCER:
+	{
+		gameSystem = new BalancerSystem();
+		break;
+	}
 	case Application::GameType::FLAPPY_BIRD:
 	{
 		gameSystem = new FlappyBirdSystem();

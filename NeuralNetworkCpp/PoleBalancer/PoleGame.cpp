@@ -300,6 +300,4 @@ void Application::DrawGame(BirdSystem& system, short x, short y, short sizeX, sh
 	Vec2 failOffset = (SPACE_MIN_HEIGHT * 2.0f * unit) * Vec2(failSin, failCos);
 	DrawLine(start.x, start.y, start.x + failOffset.x, start.y - failOffset.y, RED);
 	DrawLine(start.x, start.y, start.x - failOffset.x, start.y - failOffset.y, RED);
-	
-
 }

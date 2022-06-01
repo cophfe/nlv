@@ -1,5 +1,6 @@
 #pragma once
 #include "GameSystem.h"
+#include "Texture.h"
 
 class BalancerSystem : public GameSystem
 {
@@ -21,9 +22,18 @@ public:
 
 	struct BalancerDataPack : public GameSystem::DataPack
 	{
-
+		float poleAngle;
+		float poleVelocity;
+		float poleAcceleration;
+		float pole2Angle;
+		float pole2Velocity;
+		float pole2Acceleration;
+		float cartPosition;
+		float cartVelocity;
+		float cartAcceleration;
 	};
 
+	BalancerSystem();
 	// Inherited via GameSystem
 	virtual void SetDefaultDataPack(std::minstd_rand& random) override;
 	virtual void StepOrganism(DataPack* data, const float* networkOutputs, float& fitness, bool& continueStepping) override;
@@ -34,8 +44,12 @@ public:
 	virtual DataPack* GetDefaultDataPack() override;
 	virtual DataPack* NewDataPack() const override;
 	virtual void CopyDataPack(DataPack* dest, DataPack* src) const override;
-	virtual int GetInputCount() const override;
-	virtual int GetOutputCount() const override;
-	virtual int GetDefaultHiddenNodes() const override;
+	virtual int GetInputCount() const override { return INPUT_COUNT; }
+	virtual int GetOutputCount() const override { return OUTPUT_COUNT; }
+	virtual int GetDefaultHiddenNodes() const override { return DEFAULT_NODE_COUNT; }
+
+private:
+	BalancerDataPack defaultDataPack;
+	Texture minecart;
 };
 

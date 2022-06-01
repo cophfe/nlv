@@ -31,10 +31,12 @@ void Renderer::SetupWindow(GLuint width, GLuint height, const char* title)
 	//glEnable(GL_CULL_FACE);
 	//glCullFace(GL_BACK);
 
-	//FRAGMENT CREATE
-	GLuint fragment = glCreateShader(GL_FRAGMENT_SHADER);
-	const char* fragmentString =
-		R"(
+	//SHADER PROGRAM
+	{
+		//FRAGMENT CREATE
+		GLuint fragment = glCreateShader(GL_FRAGMENT_SHADER);
+		const char* fragmentString =
+			R"(
 #version 460 core
 in vec2 TexCoord;
 out vec4 Colour;
@@ -42,24 +44,23 @@ uniform sampler2D _Texture;
 uniform vec3 _Colour;
 void main()
 {
-    Colour = vec4(_Colour, 1.0) * textureLod(_Texture, TexCoord, 0);
-    //Colour = ;
+    Colour = vec4(_Colour, 1.0) * texture(_Texture, TexCoord);
 })";
-	glShaderSource(fragment, 1, &fragmentString, nullptr);
-	glCompileShader(fragment);
+		glShaderSource(fragment, 1, &fragmentString, nullptr);
+		glCompileShader(fragment);
 
-	GLint success = 0;
-	glGetShaderiv(fragment, GL_COMPILE_STATUS, &success);
-	if (!success)
-	{
-		GLchar log[512];
-		glGetShaderInfoLog(fragment, 512, nullptr, log);
-		std::cout << "Failed to recompile frag shader:\n" << log << std::endl;
-	}
-	//VERTEX CREATE
-	GLuint vertex = glCreateShader(GL_VERTEX_SHADER);
-	const char* vertexString =
-		R"(
+		GLint success = 0;
+		glGetShaderiv(fragment, GL_COMPILE_STATUS, &success);
+		if (!success)
+		{
+			GLchar log[512];
+			glGetShaderInfoLog(fragment, 512, nullptr, log);
+			std::cout << "Failed to recompile frag shader:\n" << log << std::endl;
+		}
+		//VERTEX CREATE
+		GLuint vertex = glCreateShader(GL_VERTEX_SHADER);
+		const char* vertexString =
+			R"(
 #version 460 core
 layout (location = 0) in vec2 position;
 
@@ -69,65 +70,156 @@ uniform mat4 _ViewProjection;
 void main()
 {
 	TexCoord = position;
-	gl_Position = _ViewProjection * (_Model * vec4(position - vec2(0.5), 1.0, 1.0));
+	gl_Position = _ViewProjection * (_Model * vec4(position - vec2(0.5), 0.0, 1.0));
 })";
-	glShaderSource(vertex, 1, &vertexString, nullptr);
-	glCompileShader(vertex);
+		glShaderSource(vertex, 1, &vertexString, nullptr);
+		glCompileShader(vertex);
 
-	success = 0;
-	glGetShaderiv(vertex, GL_COMPILE_STATUS, &success);
-	if (!success)
-	{
-		GLchar log[512];
-		glGetShaderInfoLog(vertex, 512, nullptr, log);
-		std::cout << "Failed to recompile vert shader:\n" << log << std::endl;
-	}
-	//PROGRAM CREATE
-	shaderID = glCreateProgram();
-	glAttachShader(shaderID, vertex);
-	glAttachShader(shaderID, fragment);
-	glLinkProgram(shaderID);
+		success = 0;
+		glGetShaderiv(vertex, GL_COMPILE_STATUS, &success);
+		if (!success)
+		{
+			GLchar log[512];
+			glGetShaderInfoLog(vertex, 512, nullptr, log);
+			std::cout << "Failed to recompile vert shader:\n" << log << std::endl;
+		}
+		//PROGRAM CREATE
+		shaderID = glCreateProgram();
+		glAttachShader(shaderID, vertex);
+		glAttachShader(shaderID, fragment);
+		glLinkProgram(shaderID);
 
-	success = 0;
-	glGetProgramiv(shaderID, GL_LINK_STATUS, &success);
-	if (success == GL_FALSE)
-	{
-		GLchar log[512];
-		glGetProgramInfoLog(shaderID, 512, NULL, log);
-		std::cout << "Failed to link shader program:\n" << log << std::endl;
+		success = 0;
+		glGetProgramiv(shaderID, GL_LINK_STATUS, &success);
+		if (success == GL_FALSE)
+		{
+			GLchar log[512];
+			glGetProgramInfoLog(shaderID, 512, NULL, log);
+			std::cout << "Failed to link shader program:\n" << log << std::endl;
+		}
+		//UNIFORM FIND
+		glUseProgram(shaderID);
+		colourLocation = glGetUniformLocation(shaderID, "_Colour");
+		transformLocation = glGetUniformLocation(shaderID, "_Model");
+		viewProjectionLocation = glGetUniformLocation(shaderID, "_ViewProjection");
+		glUniform1ui(glGetUniformLocation(shaderID, "_Texture"), 0);
+
+		//FLAG SHADERS FOR DELETION
+		glDeleteShader(vertex);
+		glDeleteShader(fragment);
 	}
-	//UNIFORM FIND
-	
-	glUseProgram(shaderID);
-	colourLocation = glGetUniformLocation(shaderID, "_Colour");
-	transformLocation = glGetUniformLocation(shaderID, "_Model");
-	viewProjectionLocation = glGetUniformLocation(shaderID, "_ViewProjection");
-	glUniform1ui(glGetUniformLocation(shaderID, "_Texture"), 0);
+	//LINE SHADER PROGRAM
+	{
+		//FRAGMENT CREATE
+		GLuint fragment = glCreateShader(GL_FRAGMENT_SHADER);
+		const char* fragmentString =
+			R"(
+#version 460 core
+out vec4 Colour;
+in vec3 VertexColour;
+void main()
+{
+    Colour = vec4(VertexColour, 1.0);
+})";
+		glShaderSource(fragment, 1, &fragmentString, nullptr);
+		glCompileShader(fragment);
+
+		GLint success = 0;
+		glGetShaderiv(fragment, GL_COMPILE_STATUS, &success);
+		if (!success)
+		{
+			GLchar log[512];
+			glGetShaderInfoLog(fragment, 512, nullptr, log);
+			std::cout << "Failed to recompile frag shader:\n" << log << std::endl;
+		}
+		//VERTEX CREATE
+		GLuint vertex = glCreateShader(GL_VERTEX_SHADER);
+		const char* vertexString =
+			R"(
+#version 460 core
+layout (location = 0) in vec2 position;
+layout (location = 1) in vec3 colour;
+
+out vec3 VertexColour;
+uniform mat4 _ViewProjection;
+void main()
+{
+	VertexColour = colour;
+	gl_Position = _ViewProjection * vec4(position, 0.0, 1.0);
+})";
+		glShaderSource(vertex, 1, &vertexString, nullptr);
+		glCompileShader(vertex);
+
+		success = 0;
+		glGetShaderiv(vertex, GL_COMPILE_STATUS, &success);
+		if (!success)
+		{
+			GLchar log[512];
+			glGetShaderInfoLog(vertex, 512, nullptr, log);
+			std::cout << "Failed to recompile vert shader:\n" << log << std::endl;
+		}
+		//PROGRAM CREATE
+		lineShaderID = glCreateProgram();
+		glAttachShader(lineShaderID, vertex);
+		glAttachShader(lineShaderID, fragment);
+		glLinkProgram(lineShaderID);
+
+		success = 0;
+		glGetProgramiv(lineShaderID, GL_LINK_STATUS, &success);
+		if (success == GL_FALSE)
+		{
+			GLchar log[512];
+			glGetProgramInfoLog(lineShaderID, 512, NULL, log);
+			std::cout << "Failed to link shader program:\n" << log << std::endl;
+		}
+		//UNIFORM FIND
+		glUseProgram(lineShaderID);
+		lineViewProjectionLocation = glGetUniformLocation(lineShaderID, "_ViewProjection");
+
+		//FLAG SHADERS FOR DELETION
+		glDeleteShader(vertex);
+		glDeleteShader(fragment);
+	}
 	//GET QUAD
-	glGenVertexArrays(1, &vertexArray);
-	glBindVertexArray(vertexArray);
-	glGenBuffers(1, &vertexBuffer);
-	glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-	glm::vec2 vertices[4] = {
-		{0, 0},
-		{1, 0},
-		{1, 1},
-		{0, 1}
-	};
-	//both local pos and uv data
-	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * 4, (void*)vertices, GL_STATIC_DRAW);
-
-	unsigned int indices[6] = {
-		0, 1, 2,
-		0, 2, 3
-	};
-	glGenBuffers(1, &elementBuffer);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuffer);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(unsigned int), (void*)indices, GL_STATIC_DRAW);
-	//define position
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(glm::vec2), (void*)0);
-	glEnableVertexAttribArray(0);
-
+	{
+		glGenVertexArrays(1, &vertexArray);
+		glBindVertexArray(vertexArray);
+		glGenBuffers(1, &vertexBuffer);
+		glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+		glm::vec2 vertices[4] = {
+			{0, 0},
+			{1, 0},
+			{1, 1},
+			{0, 1}
+		};
+		//both local pos and uv data
+		glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * 4, (void*)vertices, GL_STATIC_DRAW);
+		unsigned int indices[6] = {
+			0, 1, 2,
+			0, 2, 3
+		};
+		glGenBuffers(1, &elementBuffer);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuffer);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(unsigned int), (void*)indices, GL_STATIC_DRAW);
+		//define position
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(glm::vec2), (void*)0);
+	}
+	// GET LINE
+	{
+		glGenVertexArrays(1, &lineVertexArray);
+		glBindVertexArray(lineVertexArray);
+		glGenBuffers(1, &lineVertexBuffer);
+		glGenBuffers(1, &lineColourBuffer);
+		//define position & colour attrib ptrs
+		glBindBuffer(GL_ARRAY_BUFFER, lineVertexBuffer);
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(glm::vec2), (void*)0);
+		
+		glBindBuffer(GL_ARRAY_BUFFER, lineColourBuffer);
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
+	}
 
 	defaultTexture.Load("white.png");
 
@@ -136,6 +228,9 @@ void main()
 	SetCameraPosition(glm::vec3(0, 0, 0));
 	SetCameraRotation(0);
 	UpdateCamera();
+
+	glUseProgram(shaderID);
+	glBindVertexArray(vertexArray);
 }
 
 void Renderer::SetupImgui()
@@ -166,6 +261,25 @@ void Renderer::StartFrame()
 
 void Renderer::EndFrame()
 {
+	if (lines.size() > 0)
+	{
+		glUseProgram(lineShaderID);
+		//set colour
+		glBindVertexArray(lineVertexArray);
+		
+		//buffer data
+		glBindBuffer(GL_ARRAY_BUFFER, lineVertexBuffer);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * lines.size(), lines.data(), GL_DYNAMIC_DRAW);
+		glBindBuffer(GL_ARRAY_BUFFER, lineColourBuffer);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * colours.size(), colours.data(), GL_DYNAMIC_DRAW);
+
+
+		//draw
+		glDrawArrays(GL_LINES, 0, lines.size());
+
+		lines.clear();
+		colours.clear();
+	}
 	ImGui::Render();
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 	glfwSwapBuffers(window);
@@ -173,6 +287,17 @@ void Renderer::EndFrame()
 
 void Renderer::UnSetup()
 {
+	glDeleteBuffers(1, &vertexBuffer);
+	glDeleteBuffers(1, &lineVertexBuffer);
+	glDeleteVertexArrays(1, &vertexArray);
+	glDeleteVertexArrays(1, &lineVertexArray);
+	glDeleteProgram(lineShaderID);
+	glDeleteProgram(shaderID);
+
+	glBindVertexArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glUseProgram(0);
+
 	ImPlot::DestroyContext();
 	ImGui_ImplOpenGL3_Shutdown();
 	ImGui_ImplGlfw_Shutdown();
@@ -182,6 +307,8 @@ void Renderer::UnSetup()
 
 void Renderer::DrawSprite(Texture* texture, glm::vec2 position, float width, float height, float rotation, glm::vec3 colour, glm::vec2 pivot)
 {
+	glUseProgram(shaderID);
+	glBindVertexArray(vertexArray);
 	//set colour
 	glUniform3f(colourLocation, colour.x, colour.y, colour.z);
 	//bind texture
@@ -197,13 +324,21 @@ void Renderer::DrawSprite(Texture* texture, glm::vec2 position, float width, flo
 	matrix = glm::scale(matrix, glm::vec3(width, height, 1));
 	glUniformMatrix4fv(transformLocation, 1, GL_FALSE, (GLfloat*)&(matrix[0]));
 	//draw (batching you say? pffffffffffffffffffffff)
-	glBindVertexArray(vertexArray);
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
 }
 
 void Renderer::DrawBox(glm::vec2 position, float width, float height, float rotation, glm::vec3 colour, glm::vec2 pivot)
 {
 	DrawSprite(&defaultTexture, position, width, height, rotation, colour, pivot);
+}
+
+void Renderer::DrawLine(glm::vec2 start, glm::vec2 end, glm::vec3 colour)
+{
+	//ok this one is ez to do all at once
+	lines.push_back(start);
+	lines.push_back(end);
+	colours.push_back(colour);
+	colours.push_back(colour);
 }
 
 inline void Renderer::SetCameraRotation(float rotation)
@@ -230,5 +365,9 @@ void Renderer::UpdateCamera()
 	camera.view = glm::translate(camera.view, glm::vec3(camera.position, -1.0f));
 	camera.aspect = (float)w / h;
 	camera.projection = glm::ortho<float>(camera.aspect  * -camera.size, camera.aspect * camera.size, -camera.size, camera.size, 0, 100);
-	glUniformMatrix4fv(viewProjectionLocation, 1, GL_FALSE, (GLfloat*)&((camera.projection * camera.view)[0]));
+	auto m = camera.projection * camera.view;
+	glUseProgram(shaderID);
+	glUniformMatrix4fv(viewProjectionLocation, 1, GL_FALSE, (GLfloat*)&(m[0]));
+	glUseProgram(lineShaderID);
+	glUniformMatrix4fv(lineViewProjectionLocation, 1, GL_FALSE, (GLfloat*)&(m[0]));
 }

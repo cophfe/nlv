@@ -3,7 +3,6 @@
 FlappyBirdSystem::FlappyBirdSystem()
 {
 	manualOutput = std::vector<float>(1);
-	manualOutput[0] = 0;
 	bird.Load("bird.png");
 }
 
