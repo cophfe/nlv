@@ -4,6 +4,8 @@
 #include <thread>
 #include "Maths.h"
 #include <iostream>
+#include <fstream>
+#include <sstream>
 #include <random>
 #include <algorithm>
 #include "EvolverEnums.h"
@@ -29,11 +31,13 @@ public:
 	NetworkEvolver(const NetworkEvolver& other) = delete;
 	NetworkEvolver& operator=(const NetworkEvolver& other) = delete;
 	// Load data
-	static NetworkEvolver LoadFromFile(std::string file);
-	static std::string LoadFromString(std::string string);
+	bool LoadFromFile(std::string filename, EvolverStepCallback step, void* userPointer = nullptr, EvolverGenerationCallback start = nullptr, EvolverGenerationCallback end = nullptr,
+		EvolverCustomSelectionCallback customSelection = nullptr, EvolverCustomCrossoverCallback customCrossover = nullptr, EvolverCustomMutationCallback customMutation = nullptr);
+	bool LoadFromString(const std::string& string, EvolverStepCallback step, void* userPointer = nullptr, EvolverGenerationCallback start = nullptr, EvolverGenerationCallback end = nullptr,
+		EvolverCustomSelectionCallback customSelection = nullptr, EvolverCustomCrossoverCallback customCrossover = nullptr, EvolverCustomMutationCallback customMutation = nullptr);
 	// Save data
-	void SaveToFile(std::string file);
-	std::string SaveToString();
+	bool SaveToFile(std::string file) const;
+	std::string SaveToString() const;
 	// Create the new generation and run an episode to determine fitness values
 	void EvaluateGeneration();
 	void EvaluateGenerations(uint32_t count);
@@ -47,7 +51,7 @@ public:
 	inline uint32_t GetPopulationSize() const							{ return populationSize; }
 	inline bool GetIfThreadedEpisodes() const							{ return threadedStepping; }
 	inline bool GetStaticEpisodes() const								{ return staticEpisodes; }
-	inline bool GetIsInitiated() const									{ return initiated; }
+	inline bool GetIsInitiated() const									{ return initialized; }
 	inline float GetMutationScale() const								{ return mutationScale; }
 	inline float GetElitePercent() const								{ return elitePercent; }
 	inline float GetMutationRate() const								{ return mutationRate; }
@@ -96,10 +100,20 @@ private:
 	void RunEpisode();
 	static void RunEpisodePerThread(NetworkEvolver* obj, uint32_t startIndex, uint32_t endIndex);
 
+	//called by save and load functions to save and load into either string or file streams
+	bool Save(std::ostream& stream) const;
+	//yeah requires the pointers to be reset by the user because I can't save those
+	bool Load(std::istream& stream, EvolverStepCallback step, void* userPointer, EvolverGenerationCallback start, EvolverGenerationCallback end,
+		EvolverCustomSelectionCallback customSelection, EvolverCustomCrossoverCallback customCrossover, EvolverCustomMutationCallback customMutation);
+
+	void Uninitialize();
+
 	struct EvolverRandom {
+		//note: mersenne twister is slow
 		std::default_random_engine engine;
+		//note: these distribiutions mess up the determinism of the evolver because their implimentations change between computers
 		std::uniform_real_distribution<float> dist = std::uniform_real_distribution<float>(-1.0f, 1.0f);
-		std::normal_distribution<float> guassan = std::normal_distribution<float>(0, 1.0f);
+		std::normal_distribution<float> guassan = std::normal_distribution<float>(0, 1.0f); // this has a state... godammit.
 
 		//between -1 and 1
 		inline float Value() { return dist(engine); }
@@ -109,7 +123,7 @@ private:
 		inline float Normal() { return guassan(engine); }
 		inline uint32_t ChanceIndex(uint32_t size) { return Chance() * (size - 1); }
 	} random;
-	//litteraly an array of ints used to index into the organisms array
+	//literaly an array of ints used to index into the organisms array
 	uint32_t* fitnessOrderedIndexes = nullptr;
 	// Called for each organism for every step. Allows the user to modify values used for the organism's next step
 	// Inside this callback no values accessed by other organisms should be modified.
@@ -157,7 +171,7 @@ private:
 	uint32_t tournamentSize = 0;
 
 	//if the evolver is initiated or not. if it has been destroyed or was not constructed correctly this may evaluate to false
-	bool initiated = false;
+	bool initialized = false;
 
 	//for if static episodes is set to true after multiple generations have been run, to prevent issues
 	bool activateStaticEpisodes = false;

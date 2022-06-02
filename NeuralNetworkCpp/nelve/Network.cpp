@@ -103,8 +103,8 @@ Network::Network(int inputNeurons, std::vector<int> hiddenLayerNeurons, int outp
 	maxNeurons = std::max(maxNeurons, outputNeurons);
 
 	//with the max amount of neurons, create an activations array that can hold any layer's activations
-	//this will be used internally, so that I don't have to allocate an array for every layer
-	//this is probably considered to be terrible code
+	//this will be used internally, so that I don't have to allocate an array for every layer unnecessarily
+	//this is terrible code
 	activations = new float[maxNeurons * 2];
 	activationsTranslation = maxNeurons;
 	genes = new float[geneCount];
@@ -114,16 +114,7 @@ Network::Network(int inputNeurons, std::vector<int> hiddenLayerNeurons, int outp
 
 Network::~Network()
 {
-	if (layers)
-	{
-		free(layers);
-		delete[] activations;
-		delete[] genes;
-		layers = nullptr;
-		activations = nullptr;
-		genes = nullptr;
-	}
-	layerCount = 0;
+	Uninitialize();
 }
 
 Network::Network(const Network& other)
@@ -155,7 +146,7 @@ Network::Network(Network&& other)
 
 Network& Network::operator=(const Network& other)
 {
-	if (layers)
+	if (initialized)
 	{
 		free(layers);
 		delete[] activations;
@@ -180,7 +171,7 @@ Network& Network::operator=(const Network& other)
 
 Network& Network::operator=(Network&& other)
 {
-	if (layers)
+	if (initialized)
 	{
 		free(layers);
 		delete[] activations;
@@ -204,23 +195,51 @@ Network& Network::operator=(Network&& other)
 	return *this;
 }
 
-Network Network::CloneNetworkLayout()
+std::string Network::SaveToString() const
 {
-	Network network;
-	network.layerCount = layerCount;
-	network.activationsTranslation = activationsTranslation;
-	network.inputCount = inputCount;
-	network.geneCount = geneCount;
-	network.initialized = initialized;
+	std::ostringstream ss;
 
-	network.layers = (Network::Layer*)malloc(sizeof(Network::Layer) * layerCount);
-	if (!network.layers)
-		throw std::runtime_error("Failed to allocate data for layer");
-	memcpy(network.layers, layers, sizeof(Network::Layer) * layerCount);
-	network.activations = new float[activationsTranslation * 2];
-	network.genes = new float[geneCount];
-	return network;
+	Save(ss);
+
+	// if failed to load string will be empty
+	return ss.str();
 }
+
+bool Network::SaveToFile(std::string filename) const
+{
+	std::ofstream file(filename);
+	if (!file.is_open())
+		return false;
+
+	bool success = Save(file);
+	
+	file.close();
+	return success;
+}
+
+bool Network::LoadFromFile(std::string filename)
+{
+	//open file
+	std::ifstream file(filename);
+	if (!file.is_open())
+		return false;
+
+	bool success = Load(file);
+	
+	file.close();
+	return success;
+}
+
+bool Network::LoadFromString(const std::string& string)
+{
+	std::istringstream ss (string);
+	if (ss.fail())
+		return false;
+
+	bool success = Load(ss);
+	return success;
+}
+
 
 float const* Network::Evaluate(float* input, uint32_t inputCount)
 {
@@ -376,6 +395,91 @@ void Network::SetBias(uint32_t layer, uint32_t neuronIndex, float value)
 
 float Network::Activate(float weightedInput) const
 {
-	//sigmoid
+	//sigmoid function
+	//this should probably be customizable but eh
 	return 1.0f / (1 + exp(weightedInput));
+}
+
+bool Network::Save(std::ostream& stream) const
+{
+	if (!initialized)
+		return false;
+
+	//save order:
+	// file signiture
+	// input count
+	// layer count
+	// layer data
+	// gene count
+	// genes
+
+	//NOTE: the last activation values are NOT saved, they need to be recreated by calling Evaluate()
+	//it is unnecessary to save the activation values for intended uses of saving and loading
+	
+	// 8 byte signiture
+	// \211 is for the same reason as png 
+	// nlvn is for nelve network
+	// 000 is for version 000 (yeah I am probably never going to change this)
+	stream << "\211NLVN000";
+	stream << inputCount << layerCount;
+	for (size_t i = 0; i < layerCount; i++)
+		stream << layers[i].geneIndex << layers[i].outputCount;
+	stream << geneCount;
+	for (size_t i = 0; i < geneCount; i++)
+		stream << genes[i];
+
+	return true;
+}
+
+bool Network::Load(std::istream& stream)
+{
+	//check header is correct
+	std::string header(8, ' ');
+	std::copy_n(std::istreambuf_iterator<char>(stream.rdbuf()),
+		8, std::back_inserter(header));
+	if (header != "\211NLVN000")
+		return false;
+
+	//delete contents first if already initialized
+	Uninitialize();
+
+	//create network from data
+	stream >> inputCount;
+	stream >> layerCount;
+	layers = (Network::Layer*)malloc(sizeof(Network::Layer) * layerCount);
+	uint32_t maxNeurons = 0;
+	for (size_t i = 0; i < layerCount; i++)
+	{
+		stream >> layers[i].geneIndex;
+		stream >> layers[i].outputCount;
+
+		maxNeurons = std::max(maxNeurons, layers[i].outputCount);
+	}
+	stream >> geneCount;
+	genes = new float[geneCount];
+	for (size_t i = 0; i < geneCount; i++)
+		stream >> genes[i];
+
+	//set values
+	activations = new float[maxNeurons * 2];
+	activationsTranslation = maxNeurons;
+	initialized = true;
+
+	return true;
+}
+
+void Network::Uninitialize()
+{
+	if (initialized)
+	{
+		free(layers);
+		delete[] activations;
+		delete[] genes;
+		layers = nullptr;
+		activations = nullptr;
+		genes = nullptr;
+		layerCount = 0;
+
+		initialized = false;
+	}
 }

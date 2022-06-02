@@ -42,21 +42,12 @@ NetworkEvolver::NetworkEvolver(const EvolverBuilder& def)
 		organisms[i].network.RandomizeValues(random.engine);
 	}
 
-	initiated = true;
+	initialized = true;
 }
 
 NetworkEvolver::~NetworkEvolver()
 {
-	if (initiated)
-	{
-		for (size_t i = 0; i < populationSize; i++)
-			(*(organisms + i)).~NetworkOrganism();
-		free(organisms);
-		delete[] fitnessOrderedIndexes;
-		fitnessOrderedIndexes = nullptr;
-		organisms = nullptr;
-		initiated = false;
-	}
+	Uninitialize();
 }
 
 NetworkEvolver::NetworkEvolver(NetworkEvolver&& other)
@@ -72,23 +63,19 @@ NetworkEvolver::NetworkEvolver(NetworkEvolver&& other)
 	tournamentSize = other.tournamentSize;
 	fitnessOrderedIndexes = other.fitnessOrderedIndexes;
 	random = other.random;
-	initiated = other.initiated;
+	initialized = other.initialized;
+	activateStaticEpisodes = other.activateStaticEpisodes;
 
 	other.populationSize = 0;
 	other.organisms = nullptr;
 	other.fitnessOrderedIndexes = nullptr;
-	other.initiated = false;
+	other.initialized = false;
 }
 
 NetworkEvolver& NetworkEvolver::operator=(NetworkEvolver&& other)
 {
-	if (initiated)
-	{
-		for (size_t i = 0; i < populationSize; i++)
-			(*(organisms + i)).~NetworkOrganism();
-		free(organisms);
-		delete[] fitnessOrderedIndexes;
-	}
+	Uninitialize();
+	
 	populationSize = other.populationSize;
 	maxSteps = other.maxSteps;
 	elitePercent = other.elitePercent;
@@ -111,12 +98,13 @@ NetworkEvolver& NetworkEvolver::operator=(NetworkEvolver&& other)
 	tournamentSize = other.tournamentSize;
 	fitnessOrderedIndexes = other.fitnessOrderedIndexes;
 	random = other.random;
-	initiated = other.initiated;
+	initialized = other.initialized;
+	activateStaticEpisodes = other.activateStaticEpisodes;
 
 	other.populationSize = 0;
 	other.organisms = nullptr;
 	other.fitnessOrderedIndexes = nullptr;
-	other.initiated = false;
+	other.initialized = false;
 	return *this;
 }
 
@@ -137,6 +125,11 @@ void NetworkEvolver::CreateNewGen()
 
 	//Make an index array ordered by the fitnesses of organisms
 	std::sort(fitnessOrderedIndexes, fitnessOrderedIndexes + populationSize, [this](int a, int b) { return organisms[a].fitness > organisms[b].fitness; });
+
+	//since I want to be able to save the network evolver and normal_distribution is stateful it needs to be reset before use every generation to keep everything deterministic after save() and load()
+	random.guassan.reset();
+	//uniform_real_distribution probably doesn't use it's internal state but i'll call reset() on it just in case
+	random.dist.reset();
 
 	//create new organism array
 	NetworkOrganism* newOrganisms = (NetworkOrganism*)(malloc(sizeof(NetworkOrganism) * populationSize));
@@ -534,7 +527,7 @@ void NetworkEvolver::RunEpisodePerThread(NetworkEvolver* obj, uint32_t startInde
 
 void NetworkEvolver::EvaluateGeneration()
 {
-	if (!initiated)
+	if (!initialized)
 		throw std::runtime_error("NetworkEvolver was not initiated correctly");
 
 	CreateNewGen();
@@ -549,7 +542,7 @@ void NetworkEvolver::EvaluateGeneration()
 
 void NetworkEvolver::EvaluateGenerations(uint32_t count)
 {
-	if (!initiated)
+	if (!initialized)
 		throw std::runtime_error("NetworkEvolver was not initiated correctly");
 	if (count == 0)
 		throw std::runtime_error("Count cannot be 0");
@@ -631,4 +624,106 @@ void NetworkEvolver::SetCustomSelection(EvolverCustomSelectionCallback callback)
 	selectionCallback = callback;
 	selectionType = EvolverSelectionType::Custom;
 
+}
+
+std::string NetworkEvolver::SaveToString() const
+{
+	std::ostringstream ss;
+
+	Save(ss);
+
+	// if failed to load string will be empty
+	return ss.str();
+}
+
+bool NetworkEvolver::LoadFromFile(std::string filename, EvolverStepCallback step, void* userPointer, EvolverGenerationCallback start, EvolverGenerationCallback end, EvolverCustomSelectionCallback customSelection, EvolverCustomCrossoverCallback customCrossover, EvolverCustomMutationCallback customMutation)
+{
+	//open file
+	std::ifstream file(filename);
+	if (!file.is_open())
+		return false;
+
+	bool success = Load(file, step, userPointer, start, end, customSelection, customCrossover, customMutation);
+
+	file.close();
+	return success;
+}
+
+bool NetworkEvolver::LoadFromString(const std::string& string, EvolverStepCallback step, void* userPointer, EvolverGenerationCallback start, EvolverGenerationCallback end, EvolverCustomSelectionCallback customSelection, EvolverCustomCrossoverCallback customCrossover, EvolverCustomMutationCallback customMutation)
+{
+	std::istringstream ss(string);
+	if (ss.fail())
+		return false;
+
+	bool success = Load(ss, step, userPointer, start, end, customSelection, customCrossover, customMutation);
+	return success;
+}
+
+bool NetworkEvolver::SaveToFile(std::string filename) const
+{
+	std::ofstream file(filename);
+	if (!file.is_open())
+		return false;
+
+	bool success = Save(file);
+
+	file.close();
+	return success;
+}
+
+bool NetworkEvolver::Save(std::ostream& stream) const
+{
+	if (!initialized)
+		return false;
+
+	//save order:
+	// file signiture
+	// current generation
+	// population size
+	// mutation rate
+	// mutation scale
+	// mutation type
+	// selection type
+	// crossover type
+	// max steps
+	// threaded stepping
+	// static episodes
+	// episode thread count
+	// tournament size
+	// activate static episodes (yes I technically need to save this for the rarest edge case ever)
+	// random engine
+	// network input count
+	// network layer count
+	// network layer data
+	// network gene count
+	// genes for every network
+
+	// 8 byte signiture
+	// \211 is for the same reason as png 
+	// nlve is for nelve evolver
+	// 000 is for version 000
+	stream << "\211NLVE000";
+
+	return false;
+}
+
+bool NetworkEvolver::Load(std::istream& stream, EvolverStepCallback step, void* userPointer, EvolverGenerationCallback start, EvolverGenerationCallback end,
+	EvolverCustomSelectionCallback customSelection, EvolverCustomCrossoverCallback customCrossover, EvolverCustomMutationCallback customMutation)
+{
+	//Uninitialize();
+	return false;
+}
+
+void NetworkEvolver::Uninitialize()
+{
+	if (initialized)
+	{
+		for (size_t i = 0; i < populationSize; i++)
+			(*(organisms + i)).~NetworkOrganism();
+		free(organisms);
+		delete[] fitnessOrderedIndexes;
+		fitnessOrderedIndexes = nullptr;
+		organisms = nullptr;
+		initialized = false;
+	}
 }

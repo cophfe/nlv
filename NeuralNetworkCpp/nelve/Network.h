@@ -3,6 +3,9 @@
 #include "Maths.h"
 #include <stdexcept>
 #include <random>
+#include <iostream>
+#include <fstream>
+#include <sstream>
 
 class NetworkEvolver;
 
@@ -20,8 +23,10 @@ public:
 	Network& operator=(Network&& other);
 	~Network();
 
-	/// <returns>A neural network with the same layout as this one (but not the same values)</returns>
-	Network CloneNetworkLayout();
+	std::string SaveToString() const;
+	bool SaveToFile(std::string filename) const;
+	bool LoadFromFile(std::string filename);
+	bool LoadFromString(const std::string& string);
 
 	/// <param name="input">The activations of the input layer</param>
 	/// <param name="inputCount">The number of neurons in the input layer</param>
@@ -52,12 +57,16 @@ private:
 	// componentwise activation function
 	float Activate(float weightedInput) const;
 
+	bool Save(std::ostream& stream) const;
+	bool Load(std::istream& stream);
+
+	void Uninitialize();
 	//contains all weights and biases.
 	//weights (connecting a neuron in the previous layer and a neuron in the current layer)
 	// indexed by [layerGeneIndex + outputCount + currentNeuron * outputCount + previousNeuron]
 	//biases indexed by [layerGeneIndex + biasIndex]
 	float* genes;
-	// An array used to store activation values. for usage inside of the network
+	// An array used to store the output values
 	float* activations;
 	// Data about the layers of the network (output neuron count & gene index)
 	struct Layer{
@@ -77,4 +86,3 @@ private:
 	//if the network is initialized
 	bool initialized;
 };
-

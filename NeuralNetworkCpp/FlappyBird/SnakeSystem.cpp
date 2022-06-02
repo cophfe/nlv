@@ -14,6 +14,7 @@ void SnakeSystem::SetDefaultDataPack(std::minstd_rand& random)
 	defaultDataPack.body.push_back(defaultDataPack.body[0] + Coord(0, 2));
 	defaultDataPack.stepsLeft = STARTING_STEPS;
 	defaultDataPack.amountToAdd = 0;
+	defaultDataPack.random = random;
 
 	bool appleIntersecting = false;
 	//loop apple placement until it isn't on body

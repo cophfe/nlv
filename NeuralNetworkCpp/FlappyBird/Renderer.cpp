@@ -289,6 +289,7 @@ void Renderer::UnSetup()
 {
 	glDeleteBuffers(1, &vertexBuffer);
 	glDeleteBuffers(1, &lineVertexBuffer);
+	glDeleteBuffers(1, &lineColourBuffer);
 	glDeleteVertexArrays(1, &vertexArray);
 	glDeleteVertexArrays(1, &lineVertexArray);
 	glDeleteProgram(lineShaderID);
