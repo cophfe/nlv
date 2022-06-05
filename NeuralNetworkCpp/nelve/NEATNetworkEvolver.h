@@ -34,12 +34,14 @@ private:
 	};
 
 	//NetworkNEAT is the genome
-	struct NeatGenome
+	struct NEATGenome
 	{
-		std::vector<std::vector<Node>> nodes;
+		std::vector<Node> inputNodes, nodes, outputNodes;
 		std::vector<Connection> connections;
 
 		void Mutate();
 	};
+
+	struct NEAT
 };
 

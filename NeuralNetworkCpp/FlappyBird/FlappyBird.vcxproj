@@ -168,6 +168,7 @@
     <ClCompile Include="..\dependencies\imgui\implot_items.cpp" />
     <ClCompile Include="BalancerSystem.cpp" />
     <ClCompile Include="FlappyBirdSystem.cpp" />
+    <ClCompile Include="RacerSystem.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="Application.cpp" />
     <ClCompile Include="SnakeSystem.cpp" />
@@ -179,6 +180,7 @@
     <ClInclude Include="FlappyBirdSystem.h" />
     <ClInclude Include="GameSystem.h" />
     <ClInclude Include="Graphics.h" />
+    <ClInclude Include="RacerSystem.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="Application.h" />
     <ClInclude Include="SnakeSystem.h" />

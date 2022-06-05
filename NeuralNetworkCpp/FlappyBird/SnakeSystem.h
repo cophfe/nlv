@@ -59,6 +59,8 @@ public:
 		Direction movementDirection;
 		int stepsLeft;
 		int amountToAdd;
+
+		virtual ~SnakeDataPack() = default;
 	};
 
 	SnakeSystem();

@@ -18,6 +18,7 @@ public:
 	//e.g for pole balancer it will hold velocity, position, pole angle
 	struct DataPack {
 
+		virtual ~DataPack() = default;
 	};
 
 	//set the default datapack to values on the start of a generation

@@ -36,6 +36,8 @@ public:
 		float barHeight;
 		float spaceHeight;
 		std::minstd_rand random;
+
+		virtual ~FlappyBirdDataPack() = default;
 	};
 
 	// Inherited via GameSystem

@@ -31,9 +31,13 @@ public:
 		float cartPosition;
 		float cartVelocity;
 		float cartAcceleration;
+
+		virtual ~BalancerDataPack() = default;
+
 	};
 
 	BalancerSystem();
+	virtual ~BalancerSystem() override = default;
 	// Inherited via GameSystem
 	virtual void SetDefaultDataPack(std::minstd_rand& random) override;
 	virtual void StepOrganism(DataPack* data, const float* networkOutputs, float& fitness, bool& continueStepping) override;

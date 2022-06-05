@@ -44,7 +44,7 @@ Application::Application()
 
 	renderer.SetCameraSize(100.0f);
 
-	SetGame(GameType::POLE_BALANCER);
+	SetGame(GameType::SNAKE);
 	ConfigureEvolver();
 	evolverIsSetup = true;
 
@@ -231,10 +231,10 @@ void Application::DrawEvolverWindow()
 		if (ImGui::Combo("Mutation Type", &mutationType, "Set\0Add\0\0"))
 			evolver.SetMutationType((EvolverMutationType)mutationType);
 		//Crossover
-		if (ImGui::Combo("Crossover Type", &crossoverType, "Proportional\0Ranked\0Tournament\0\0"))
+		if (ImGui::Combo("Crossover Type", &crossoverType, "Uniform\0Point\0TwoPoint\0Arithmetic\0ArithmeticProportional\0\0"))
 			evolver.SetCrossoverType((EvolverCrossoverType)crossoverType);
 		//Selection
-		if (ImGui::Combo("Selection Type", &selectionType, "Uniform\0Point\0TwoPoint\0Arithmetic\0ArithmeticProportional\0\0"))
+		if (ImGui::Combo("Selection Type", &selectionType, "Proportional\0Ranked\0Tournament\0\0"))
 			evolver.SetSelectionType((EvolverSelectionType)selectionType);
 
 	}

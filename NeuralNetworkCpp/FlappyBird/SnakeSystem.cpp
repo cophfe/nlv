@@ -7,6 +7,9 @@ SnakeSystem::SnakeSystem()
 
 void SnakeSystem::SetDefaultDataPack(std::minstd_rand& random)
 {
+	//something here causes a memory leak??
+	//its the body vector, it is not being destructed
+
 	defaultDataPack.body.clear();
 	defaultDataPack.movementDirection = Direction::DOWN;
 	defaultDataPack.body.emplace_back(GRID_SIZE / 2, GRID_SIZE / 2);
