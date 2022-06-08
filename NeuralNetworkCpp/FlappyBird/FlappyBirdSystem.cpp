@@ -87,8 +87,11 @@ void FlappyBirdSystem::ResetManualOutput()
 	manualOutput[0] = 0;
 }
 
-void FlappyBirdSystem::OnKeyPressed(GLFWwindow* window, int keycode, int action)
+void FlappyBirdSystem::OnKeyPressed(Renderer& renderer, int keycode, int action, bool manual)
 {
+	if (!manual)
+		return;
+
 	if (action == GLFW_PRESS && keycode == GLFW_KEY_SPACE)
 		manualOutput[0] = 1;
 }

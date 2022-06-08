@@ -71,7 +71,7 @@ public:
 	virtual void StepOrganism(DataPack* data, const float* networkOutputs, float& fitness, bool& continueStepping) override;
 	virtual void SetNetworkInputs(DataPack* data, float* networkInputArray) override;
 	virtual void ResetManualOutput() override;
-	virtual void OnKeyPressed(GLFWwindow* window, int keycode, int action) override;
+	virtual void OnKeyPressed(Renderer& renderer, int keycode, int action, bool manual) override;
 	virtual void DrawGame(DataPack* data, Renderer& renderer) override;
 	virtual DataPack* GetDefaultDataPack() override;
 	virtual DataPack* NewDataPack() const override;

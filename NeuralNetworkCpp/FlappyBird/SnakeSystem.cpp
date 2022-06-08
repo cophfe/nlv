@@ -124,8 +124,11 @@ void SnakeSystem::ResetManualOutput()
 	manualOutput[2] = 0;
 }
 
-void SnakeSystem::OnKeyPressed(GLFWwindow* window, int keycode, int action)
+void SnakeSystem::OnKeyPressed(Renderer& renderer, int keycode, int action, bool manual)
 {
+	if (!manual)
+		return;
+
 	if (action == GLFW_PRESS)
 	{
 		if (keycode == GLFW_KEY_LEFT)

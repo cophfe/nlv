@@ -626,7 +626,7 @@ void NetworkEvolver::SetCustomSelection(EvolverCustomSelectionCallback callback)
 
 }
 
-std::string NetworkEvolver::SaveToString() const
+std::string NetworkEvolver::SavePopulationToString() const
 {
 	std::ostringstream ss;
 
@@ -636,30 +636,30 @@ std::string NetworkEvolver::SaveToString() const
 	return ss.str();
 }
 
-bool NetworkEvolver::LoadFromFile(std::string filename, EvolverStepCallback step, void* userPointer, EvolverGenerationCallback start, EvolverGenerationCallback end, EvolverCustomSelectionCallback customSelection, EvolverCustomCrossoverCallback customCrossover, EvolverCustomMutationCallback customMutation)
+bool NetworkEvolver::LoadPopulationFromFile(std::string filename)
 {
 	//open file
 	std::ifstream file(filename);
 	if (!file.is_open())
 		return false;
 
-	bool success = Load(file, step, userPointer, start, end, customSelection, customCrossover, customMutation);
+	bool success = Load(file);
 
 	file.close();
 	return success;
 }
 
-bool NetworkEvolver::LoadFromString(const std::string& string, EvolverStepCallback step, void* userPointer, EvolverGenerationCallback start, EvolverGenerationCallback end, EvolverCustomSelectionCallback customSelection, EvolverCustomCrossoverCallback customCrossover, EvolverCustomMutationCallback customMutation)
+bool NetworkEvolver::LoadPopulationFromString(const std::string& string)
 {
 	std::istringstream ss(string);
 	if (ss.fail())
 		return false;
 
-	bool success = Load(ss, step, userPointer, start, end, customSelection, customCrossover, customMutation);
+	bool success = Load(ss);
 	return success;
 }
 
-bool NetworkEvolver::SaveToFile(std::string filename) const
+bool NetworkEvolver::SavePopulationToFile(std::string filename) const
 {
 	std::ofstream file(filename);
 	if (!file.is_open())
@@ -680,17 +680,6 @@ bool NetworkEvolver::Save(std::ostream& stream) const
 	// file signiture
 	// current generation
 	// population size
-	// mutation rate
-	// mutation scale
-	// mutation type
-	// selection type
-	// crossover type
-	// max steps
-	// threaded stepping
-	// static episodes
-	// episode thread count
-	// tournament size
-	// activate static episodes (yes I technically need to save this for the rarest edge case ever)
 	// random engine
 	// network input count
 	// network layer count
@@ -707,8 +696,7 @@ bool NetworkEvolver::Save(std::ostream& stream) const
 	return false;
 }
 
-bool NetworkEvolver::Load(std::istream& stream, EvolverStepCallback step, void* userPointer, EvolverGenerationCallback start, EvolverGenerationCallback end,
-	EvolverCustomSelectionCallback customSelection, EvolverCustomCrossoverCallback customCrossover, EvolverCustomMutationCallback customMutation)
+bool NetworkEvolver::Load(std::istream& stream)
 {
 	//Uninitialize();
 	return false;

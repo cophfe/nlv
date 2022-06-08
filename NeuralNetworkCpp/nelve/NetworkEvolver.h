@@ -31,13 +31,11 @@ public:
 	NetworkEvolver(const NetworkEvolver& other) = delete;
 	NetworkEvolver& operator=(const NetworkEvolver& other) = delete;
 	// Load data
-	bool LoadFromFile(std::string filename, EvolverStepCallback step, void* userPointer = nullptr, EvolverGenerationCallback start = nullptr, EvolverGenerationCallback end = nullptr,
-		EvolverCustomSelectionCallback customSelection = nullptr, EvolverCustomCrossoverCallback customCrossover = nullptr, EvolverCustomMutationCallback customMutation = nullptr);
-	bool LoadFromString(const std::string& string, EvolverStepCallback step, void* userPointer = nullptr, EvolverGenerationCallback start = nullptr, EvolverGenerationCallback end = nullptr,
-		EvolverCustomSelectionCallback customSelection = nullptr, EvolverCustomCrossoverCallback customCrossover = nullptr, EvolverCustomMutationCallback customMutation = nullptr);
+	bool LoadPopulationFromFile(std::string filename);
+	bool LoadPopulationFromString(const std::string& string);
 	// Save data
-	bool SaveToFile(std::string file) const;
-	std::string SaveToString() const;
+	bool SavePopulationToFile(std::string file) const;
+	std::string SavePopulationToString() const;
 	// Create the new generation and run an episode to determine fitness values
 	void EvaluateGeneration();
 	void EvaluateGenerations(uint32_t count);
@@ -103,8 +101,7 @@ private:
 	//called by save and load functions to save and load into either string or file streams
 	bool Save(std::ostream& stream) const;
 	//yeah requires the pointers to be reset by the user because I can't save those
-	bool Load(std::istream& stream, EvolverStepCallback step, void* userPointer, EvolverGenerationCallback start, EvolverGenerationCallback end,
-		EvolverCustomSelectionCallback customSelection, EvolverCustomCrossoverCallback customCrossover, EvolverCustomMutationCallback customMutation);
+	bool Load(std::istream& stream);
 
 	void Uninitialize();
 

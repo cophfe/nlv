@@ -72,8 +72,16 @@ void BalancerSystem::ResetManualOutput()
 {
 }
 
-void BalancerSystem::OnKeyPressed(GLFWwindow* window, int keycode, int action)
+void BalancerSystem::StartOrganismPreview(bool manual, Renderer& renderer)
 {
+	manualOutput[0] = 0;
+}
+
+void BalancerSystem::OnKeyPressed(Renderer& renderer, int keycode, int action, bool manual)
+{
+	if (!manual)
+		return;
+
 	if (keycode == GLFW_KEY_RIGHT)
 	{
 		if (action == GLFW_PRESS)
@@ -81,7 +89,6 @@ void BalancerSystem::OnKeyPressed(GLFWwindow* window, int keycode, int action)
 		else
 			manualOutput[0] = 0;
 	}
-	
 }
 
 void BalancerSystem::DrawGame(DataPack* data, Renderer& renderer)

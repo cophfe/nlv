@@ -40,11 +40,11 @@ Application::Application()
 	renderer.SetupWindow(1000, 700, "hello there");
 	glfwSetWindowUserPointer(renderer.GetWindow(), this);
 	glfwSetKeyCallback(renderer.GetWindow(), OnKeyPressed);
+	glfwSetMouseButtonCallback(renderer.GetWindow(), OnMousePressed);
+	glfwSetScrollCallback(renderer.GetWindow(), OnMouseScrolled);
 	renderer.SetupImgui();
 
-	renderer.SetCameraSize(100.0f);
-
-	SetGame(GameType::SNAKE);
+	SetGame(GameType::RACER);
 	ConfigureEvolver();
 	evolverIsSetup = true;
 
@@ -72,10 +72,11 @@ void Application::RunGeneration()
 	if (evolver.GetIsInitiated() && !evolverIsRunning)
 	{
 		std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
-
+		gameSystem->OnStartEndGeneration(true);
 		evolverIsRunning = true;
 		evolver.EvaluateGeneration();
 		evolverIsRunning = false;
+		gameSystem->OnStartEndGeneration(false);
 
 		std::chrono::high_resolution_clock::time_point e = std::chrono::high_resolution_clock::now();
 		timeToComplete = (float)std::chrono::duration_cast<std::chrono::duration<double>>(std::chrono::high_resolution_clock::now() - start).count();
@@ -93,6 +94,7 @@ void Application::RunGenerations()
 
 	runGenerations = true;
 	evolverIsRunning = true;
+	gameSystem->OnStartEndGeneration(true);
 	while (evolver.GetIsInitiated() && runGenerations)
 	{
 		std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
@@ -105,6 +107,7 @@ void Application::RunGenerations()
 		GetEvolverValues();
 	}
 	SetCurrentSolution(0);
+	gameSystem->OnStartEndGeneration(false);
 	evolverIsRunning = false;
 	runGenerations = false;
 }
@@ -116,7 +119,7 @@ void Application::DrawEvolverWindow()
 	if (evolverIsSetup)
 		ImGui::BeginDisabled();
 
-	if (ImGui::Combo("Game", (int*)&gameType, "FlappyBird\0PoleBalancer\0Snake\0\0"))
+	if (ImGui::Combo("Game", (int*)&gameType, "FlappyBird\0PoleBalancer\0Snake\0Racer\0\0"))
 	{
 		ClearEvolver();
 		SetGame(gameType);
@@ -512,7 +515,6 @@ void Application::StepFunction(const NetworkEvolver& evolver, NetworkOrganism& o
 		//but this is just a progress bar sooo whatever it dont matter
 		ptr->progress += 1.0f / ptr->populationSize;
 	}
-
 }
 
 void Application::SetupDefaultSystem()
@@ -534,6 +536,7 @@ void Application::SetCurrentSolution(int organismIndex)
 	currentSolution.isAI = true;
 	gameSystem->SetNetworkInputs(currentSolution.dataPack, currentSolution.inputs.data());
 	currentSolution.running = true;
+	gameSystem->StartOrganismPreview(false, renderer);
 }
 
 void Application::SetCurrentSolutionToPlayMode()
@@ -546,6 +549,7 @@ void Application::SetCurrentSolutionToPlayMode()
 	currentSolution.playSpeed = 0;
 	currentSolution.isAI = false;
 	currentSolution.running = true;
+	gameSystem->StartOrganismPreview(true, renderer);
 }
 
 void Application::RunCurrentSolution()
@@ -650,6 +654,10 @@ void Application::ClearEvolver()
 
 void Application::SetGame(GameType type)
 {
+	renderer.SetCameraPosition(glm::vec2(0));
+	renderer.SetCameraRotation(0);
+	renderer.SetCameraSize(100.0f);
+
 	gameType = type;
 	if (gameSystem)
 		delete gameSystem;
@@ -673,6 +681,11 @@ void Application::SetGame(GameType type)
 		gameSystem = new FlappyBirdSystem();
 		break;
 	}
+	case Application::GameType::RACER:
+	{
+		gameSystem = new RacerSystem();
+		break;
+	}
 	}
 	currentSolution.dataPack = gameSystem->NewDataPack();
 	currentSolution.inputs = std::vector<float>(gameSystem->GetInputCount());
@@ -686,8 +699,28 @@ void Application::OnKeyPressed(GLFWwindow* window, int keycode, int scancode, in
 {
 	Application* ptr = (Application*)glfwGetWindowUserPointer(window);
 
-	if (ptr->currentSolution.running && !ptr->currentSolution.isAI)
+	if (ptr->evolverIsSetup)
 	{
-		ptr->gameSystem->OnKeyPressed(window, keycode, action);
+		ptr->gameSystem->OnKeyPressed(ptr->renderer, keycode, action, !ptr->currentSolution.isAI);
+	}
+}
+
+void Application::OnMousePressed(GLFWwindow* window, int button, int action, int mods)
+{
+	Application* ptr = (Application*)glfwGetWindowUserPointer(window);
+
+	if (ptr->evolverIsSetup && !ImGui::GetIO().WantCaptureMouse)
+	{
+		ptr->gameSystem->OnMousePressed(ptr->renderer, button, action, !ptr->currentSolution.isAI);
+	}
+}
+
+void Application::OnMouseScrolled(GLFWwindow* window, double xoffset, double yoffset)
+{
+	Application* ptr = (Application*)glfwGetWindowUserPointer(window);
+
+	if (ptr->evolverIsSetup && !ImGui::GetIO().WantCaptureMouse)
+	{
+		ptr->gameSystem->OnMouseScrolled(ptr->renderer, yoffset, !ptr->currentSolution.isAI);
 	}
 }

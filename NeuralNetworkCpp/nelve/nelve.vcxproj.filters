@@ -27,9 +27,6 @@
     <ClInclude Include="NetworkOrganism.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="NEATNetworkEvolver.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="EvolverBuilder.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -45,9 +42,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="NetworkOrganism.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="NEATNetworkEvolver.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="EvolverBuilder.cpp">

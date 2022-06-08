@@ -14,6 +14,7 @@
 #include "FlappyBirdSystem.h"
 #include "SnakeSystem.h"
 #include "BalancerSystem.h"
+#include "RacerSystem.h"
 
 //basic test of genetic algorithm
 //https://researchbank.swinburne.edu.au/file/62a8df69-4a2c-407f-8040-5ac533fc2787/1/PDF%20(12%20pages).pdf
@@ -69,6 +70,7 @@ private:
 		FLAPPY_BIRD,
 		POLE_BALANCER,
 		SNAKE,
+		RACER,
 		UNSET 
 	};
 	void SetGame(GameType type);
@@ -113,6 +115,8 @@ private:
 	} currentSolution;
 
 	static void OnKeyPressed(GLFWwindow* window, int keycode, int scancode, int action, int mods);
+	static void OnMousePressed(GLFWwindow* window, int button, int action, int mods);
+	static void OnMouseScrolled(GLFWwindow* window, double xoffset, double yoffset);
 };
 
 

@@ -1,6 +1,6 @@
 ﻿  SnakeGame.cpp
-C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\nelve\NetworkEvolver.h(45,31): warning C4114: same type qualifier used more than once
-C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\nelve\NetworkEvolver.h(110,64): warning C4244: 'return': conversion from 'float' to 'uint32_t', possible loss of data
+C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\nelve\NetworkEvolver.h(49,31): warning C4114: same type qualifier used more than once
+C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\nelve\NetworkEvolver.h(124,64): warning C4244: 'return': conversion from 'float' to 'uint32_t', possible loss of data
 C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\SimpleImplementation\Button.h(73,32): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
 C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\SimpleImplementation\SnakeGame.cpp(7,18): warning C4244: 'argument': conversion from 'time_t' to 'unsigned int', possible loss of data
 C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\SimpleImplementation\SnakeGame.cpp(15,93): warning C4244: 'argument': conversion from 'time_t' to 'uint32_t', possible loss of data
@@ -50,11 +50,12 @@ C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\SimpleImplementatio
 C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\SimpleImplementation\SnakeGame.cpp(452,50): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
 C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\SimpleImplementation\SnakeGame.cpp(452,25): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
   Source.cpp
-C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\nelve\NetworkEvolver.h(45,31): warning C4114: same type qualifier used more than once
-C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\nelve\NetworkEvolver.h(110,64): warning C4244: 'return': conversion from 'float' to 'uint32_t', possible loss of data
+C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\nelve\NetworkEvolver.h(49,31): warning C4114: same type qualifier used more than once
+C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\nelve\NetworkEvolver.h(124,64): warning C4244: 'return': conversion from 'float' to 'uint32_t', possible loss of data
 C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\SimpleImplementation\Button.h(73,32): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
 C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\SimpleImplementation\Source.cpp(6,1): warning C4326: return type of 'main' should be 'int' instead of 'void'
   Generating Code...
 C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\SimpleImplementation\Button.h(25): warning C4172: returning address of local variable or temporary
 C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\SimpleImplementation\Button.h(22): warning C4172: returning address of local variable or temporary
+LINK : warning LNK4098: defaultlib 'MSVCRT' conflicts with use of other libs; use /NODEFAULTLIB:library
   SimpleImplementation.vcxproj -> C:\AIE\Year 2\ComplexSystems\ComplexSystems\NeuralNetworkCpp\x64\Debug\SimpleImplementation.exe

@@ -342,6 +342,28 @@ void Renderer::DrawLine(glm::vec2 start, glm::vec2 end, glm::vec3 colour)
 	colours.push_back(colour);
 }
 
+glm::vec2 Renderer::GetMousePosition()
+{
+	double x, y;
+	int w, h;
+	glfwGetCursorPos(window, &x, &y);
+	glfwGetWindowSize(window, &w, &h);
+
+	x = (x / w) * 2.0 - 1.0;
+	y = -((y / h) * 2.0 - 1.0);
+
+	auto transformed = glm::inverse(camera.projection * camera.view) * glm::vec4(x, y, 0, 1);
+    return transformed;
+}
+
+glm::vec2 Renderer::GetMouseScreenPosition()
+{
+	double x, y;
+	int w, h;
+	glfwGetCursorPos(window, &x, &y);
+	return glm::vec2(x, y);
+}
+
 inline void Renderer::SetCameraRotation(float rotation)
 {
 	camera.rotation = glm::radians(rotation);

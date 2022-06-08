@@ -49,7 +49,7 @@ public:
 
 	virtual void ResetManualOutput() override;
 
-	virtual void OnKeyPressed(GLFWwindow* window, int keycode, int action) override;
+	virtual void OnKeyPressed(Renderer& renderer, int keycode, int action, bool manual) override;
 
 	virtual void DrawGame(DataPack* data, Renderer& renderer) override;
 

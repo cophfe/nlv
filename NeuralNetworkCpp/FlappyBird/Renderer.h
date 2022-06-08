@@ -39,9 +39,10 @@ public:
 		glm::mat4x4 view;
 	};
 
-	static constexpr int BATCH_SIZE = 50;
 	inline const Camera& GetCamera() { return camera; }
 	inline GLFWwindow* GetWindow() { return window; }
+	glm::vec2 GetMousePosition();
+	glm::vec2 GetMouseScreenPosition();
 
 	//also updates the projection matrix
 	inline void SetCameraRotation(float rotation);
