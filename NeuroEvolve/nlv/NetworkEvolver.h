@@ -22,25 +22,32 @@ namespace nlv
 		NetworkEvolver(NetworkEvolver&& other);
 		// Move assignment
 		NetworkEvolver& operator=(NetworkEvolver&& other);
-		// Copy constructor and assignment are unnesesary, right??
+		// Copy constructor and assignment are unnecessary, right??
 		NetworkEvolver(const NetworkEvolver& other) = delete;
 		NetworkEvolver& operator=(const NetworkEvolver& other) = delete;
 
-		// Load data
+		// Loads population data from a file
+		// filename: The file to load from
+		// Returns whether the load succeeded or failed
 		bool LoadPopulationFromFile(std::string filename);
+
+		// Loads population data from a file
+		// string: The string to load from
+		// Returns whether the load succeeded or failed
 		bool LoadPopulationFromString(const std::string& string);
 
 		// Saves population data to a file
-		// filename: The filename of which to save the network to
+		// filename: The filename of which to save the data to
 		// Returns whether the save succeeded or failed
 		bool SavePopulationToFile(std::string filename) const;
-
-		// Saves population data to a string
+		
+		// Saves population data to a file
+		// Returns a string containing the population data
 		std::string SavePopulationToString() const;
 
 		// Evaluates a generation: constructs a new generation and calculates fitness values for them
 		void EvaluateGeneration();
-		// Evaluates several generations: constructs a new generation and calculates fitness values for them
+		// Evaluates several generations: constructs new generations and calculates fitness values for them
 		void EvaluateGenerations(uint32_t count);
 
 		//Finds the organism with the highest fitness
@@ -66,6 +73,7 @@ namespace nlv
 		inline EvolverMutationType GetMutationType() const { return mutationType; }
 		inline EvolverSelectionType GetSelectionType() const { return selectionType; }
 		inline void* GetUserPointer() const { return userPointer; }
+
 		//Setters
 		inline void SetIsThreadedEpisodes(bool threaded) { threadedStepping = threaded; }
 		void SetStaticEpisodes(bool staticEpisodes);
@@ -111,7 +119,7 @@ namespace nlv
 		struct EvolverRandom {
 			//note: mersenne twister is slow
 			std::default_random_engine engine;
-			//note: these distribiutions mess up the determinism of the evolver because their implimentations change between computers
+			//note: these distribiutions mess up the determinism of the evolver because their implementations change between computers (what the hell <random>? u suck)
 			std::uniform_real_distribution<float> dist = std::uniform_real_distribution<float>(-1.0f, 1.0f);
 			std::normal_distribution<float> guassan = std::normal_distribution<float>(0, 1.0f); // this has a state... godammit.
 

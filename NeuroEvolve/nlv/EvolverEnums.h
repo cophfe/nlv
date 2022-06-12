@@ -1,14 +1,20 @@
 #pragma once
 #include "NetworkOrganism.h"
 
-namespace nlv {
+namespace nlv 
+{
+	//callback that is called every episode for each organism in a loop until organism.continueStepping evaluates to false
 	typedef void(*EvolverStepCallback)(const NetworkEvolver& evolver, NetworkOrganism& organism, int organismIndex);
+	//used for two callbacks, one called at the start of an episode and one called at the end of an episode
 	typedef void(*EvolverGenerationCallback)(const NetworkEvolver& evolver, NetworkOrganism* organisms);
+	//used for custom crossover implementations
 	typedef void(*EvolverCustomCrossoverCallback)(float* childGenes, const NetworkOrganism& p1, const NetworkOrganism& p2, float* p1Genes, float* p2Genes);
+	//used for custom mutation implementations
 	typedef void(*EvolverCustomMutationCallback)(float* genes, const NetworkOrganism& organism);
+	//used for custom selection implementations
 	typedef NetworkOrganism* (*EvolverCustomSelectionCallback)(NetworkOrganism* organisms, NetworkOrganism*& selectedOrganism);
 
-	// Note: in this class a gene is considered to be a weight or a bias in a neural network
+	// Note: in this library a gene is considered to be a weight or a bias in a neural network
 	// When a gene is mutated, this decides how exactly that will take place
 	enum class EvolverMutationType : char
 	{

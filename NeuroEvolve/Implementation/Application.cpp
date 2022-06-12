@@ -239,7 +239,7 @@ void Application::DrawEvolverWindow()
 		if (ImGui::Combo("Crossover Type", &crossoverType, "Uniform\0Point\0TwoPoint\0Arithmetic\0ArithmeticProportional\0\0"))
 			evolver.SetCrossoverType((EvolverCrossoverType)crossoverType);
 		//Selection
-		if (ImGui::Combo("Selection Type", &selectionType, "Proportional\0Ranked\0Tournament\0\0"))
+		if (ImGui::Combo("Selection Type", &selectionType, "Proportional\0Ranked\0\0"))
 			evolver.SetSelectionType((EvolverSelectionType)selectionType);
 
 	}

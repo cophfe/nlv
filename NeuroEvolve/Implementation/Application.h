@@ -29,7 +29,7 @@ constexpr int DEFAULT_POPULATION = 1000;
 constexpr float DEFAULT_MAX_TIME = 60;
 constexpr float DEFAULT_ELITE = 0.05f;
 constexpr bool DEFAULT_THREADED = true;
-constexpr bool DEFAULT_STATIC = false;
+constexpr bool DEFAULT_STATIC = true;
 constexpr float DEFAULT_MUTATION_RATE = 0.2f;
 
 class Application

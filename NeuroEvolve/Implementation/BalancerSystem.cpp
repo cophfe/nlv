@@ -105,7 +105,6 @@ void BalancerSystem::DrawGame(DataPack* data, Renderer& renderer)
 	renderer.DrawBox(glm::vec2(0, -size / 2 + borderSize / 2), size, borderSize, 0, glm::vec3(0.2f));
 	size = size - borderSize * 2;
 	float halfSize = size / 2.0f;
-	renderer.DrawBox(glm::vec2(0,0), size, size, 0, glm::vec3(0.0f));
 
 	float unit = (float)size / (TRACK_LIMIT * 2.0f + 2);
 	short cartSizeY = unit * 0.5f;

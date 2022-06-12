@@ -6,59 +6,47 @@ namespace nlv
 {
 	class NetworkEvolver;
 
-	//https://en.wikipedia.org/wiki/Builder_pattern
 	struct NetworkEvolverBuilder
 	{
 		friend NetworkEvolver;
-	public:
-		/// <param name="networkTemplate">A network that is used as a template for the networks in the evolver</param>
-		/// <param name="stepFunction">The step function used in the evolver</param>
-		/// <param name="population">The number of individuals in the population</param>
-		/// <param name="maxSteps">The maximum number of steps in an episode per individual</param>
-		/// <param name="seed">The seed for the initial values of the networks. Setting this to zero automatically assigns a random seed</param>
+		// networkTemplate: A network that is used as a template for the networks in the evolver
+		// stepFunction: The step function used in the evolver
+		// population: The number of individuals in the population
+		// maxSteps: The maximum number of steps in an episode per individual
+		// seed: The seed for the initial values of the networks. Setting this to zero automatically assigns a random seed
 		NetworkEvolverBuilder(Network& networkTemplate, EvolverStepCallback stepFunction, uint32_t populationSize, uint32_t maxSteps, uint32_t seed = 0);
-		/// <param name="startFunction">A callback called before running each episode</param>
-		/// <param name="endFunction">A callback called after running each episode</param>
+		// startFunction: A callback called before running each episode
+		// endFunction: A callback called after running each episode
 		NetworkEvolverBuilder& SetCallbacks(EvolverGenerationCallback startFunction, EvolverGenerationCallback endFunction);
-		/// <param name="elitePercent">The percentage of individuals that are retained every generation</param>
+		// elitePercent: The percentage of individuals that are retained every generation
 		NetworkEvolverBuilder& SetElitePercent(float elitePercent);
-		/// <param name="staticEpisodes">Whether the parameters for each episode change or not</param>
-		/// <param name="threadedEpisodes">Whether running episodes is threaded or not</param>
-		/// <param name="threadCount">The number of threads used when running episodes</param>
+		// staticEpisodes: Whether the parameters for each episode change or not
+		// threadedEpisodes: Whether running episodes is threaded or not
+		// threadCount: The number of threads used when running episodes
 		NetworkEvolverBuilder& SetEpisodeParameters(bool staticEpisodes, bool threadedEpisodes, uint32_t threadCount = 5);
-		/// <param name="type">The type of mutation</param>
-		/// <param name="mutationRate">The percentage chance a individual is mutated every generation</param>
-		/// <param name="mutationScale">The scale of mutation when using EvolverMutationType::Add</param>
+		// type: The type of mutation
+		// mutationRate: The percentage chance a individual is mutated every generation
+		// mutationScale: The scale of mutation when using EvolverMutationType::Add
 		NetworkEvolverBuilder& SetMutation(EvolverMutationType type, float mutationRate, float mutationScale = 1);
-		/// <param name="type">The crossover type</param>
+		// type: The crossover type
 		NetworkEvolverBuilder& SetCrossover(EvolverCrossoverType type);
-		/// <param name="type">The selection type</param>
+		// The selection type
 		NetworkEvolverBuilder& SetSelection(EvolverSelectionType type);
-		/// <summary>
-		/// Used to set a custom callback used for selection. Sets selection type to custom.
-		/// </summary>
-		/// <param name="callback">The callback used for selection</param>
+		// Used to set a custom callback used for selection. Sets selection type to custom.
+		// callback: The callback used for selection
 		NetworkEvolverBuilder& SetCustomSelectionType(EvolverCustomSelectionCallback callback);
-		/// <summary>
-		/// Used to set a custom callback used for mutation. Sets mutation type to custom.
-		/// </summary>
-		/// <param name="callback">The callback used for mutation</param>
+		// Used to set a custom callback used for mutation. Sets mutation type to custom.
+		// callback: The callback used for mutation
 		NetworkEvolverBuilder& SetCustomMutationType(EvolverCustomMutationCallback callback);
-		/// <summary>
-		/// Used to set a custom callback used for crossover. Sets crossover type to custom.
-		/// </summary>
-		/// <param name="callback">The callback used for crossover</param>
+		// Used to set a custom callback used for crossover. Sets crossover type to custom.
+		// callback: The callback used for crossover
 		NetworkEvolverBuilder& SetCustomCrossoverType(EvolverCustomCrossoverCallback callback);
-		/// <summary>
-		/// Sets parameters for tournament selection. Sets selection type to tournament.
-		/// </summary>
-		/// <param name="tournamentSize">The number of organisms competing in a tournament</param>
+		// Sets parameters for tournament selection. Sets selection type to tournament.
+		// tournamentSize: The number of organisms competing in a tournament
 		NetworkEvolverBuilder& SetTournament(uint32_t tournamentSize);
-		/// <param name="ptr">A custom user pointer accessible through the network evolver</param>
+		// ptr: A custom user pointer accessible through the network evolver
 		NetworkEvolverBuilder& SetUserPointer(void* ptr);
-		/// <summary>
-		/// Creates a network evolver from this builder.
-		/// </summary>
+		// Creates a network evolver from builder parameters.
 		NetworkEvolver Build();
 
 	private:

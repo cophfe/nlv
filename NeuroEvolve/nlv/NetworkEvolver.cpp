@@ -672,26 +672,20 @@ namespace nlv
 
 	bool NetworkEvolver::Load(std::istream& stream)
 	{
+		//load only loads population data, it does not load other values
+		if (!initialized)
+			return false;
+
 		//check header is correct
 		std::string header(8, ' ');
 		std::copy_n(std::istreambuf_iterator<char>(stream.rdbuf()),
 			8, std::back_inserter(header));
-		if (header != "\211NLVN000")
+		if (header != "\211NLVE000")
 			return false;
 
 		//delete contents first if already initialized
 		Uninitialize();
 		
-		//setup everything
-		// current generation
-		// population size
-		// random engine
-		// network input count
-		// network layer count
-		// network layer data
-		// network gene count
-		// genes + fitness values for every organism
-
 		stream >> currentGeneration;
 		stream >> populationSize;
 		stream >> random.engine;
@@ -719,6 +713,11 @@ namespace nlv
 			}
 			stream >> organisms[i].fitness;
 		}
+
+		fitnessOrderedIndexes = new uint32_t[populationSize];
+		for (size_t i = 0; i < populationSize; i++)
+			fitnessOrderedIndexes[i] = i;
+
 		initialized = true;
 		return true;
 	}
